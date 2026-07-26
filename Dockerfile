@@ -15,45 +15,33 @@ RUN pnpm install --no-frozen-lockfile
 # 3. Build step — compile frontend and backend, generate Prisma client
 FROM base AS build
 WORKDIR /app
+# Copy full node_modules from pnpm workspace (includes root .pnpm virtual store)
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=dependencies /app/frontend/node_modules ./frontend/node_modules
 COPY --from=dependencies /app/backend/node_modules ./backend/node_modules
 COPY . .
-# Generate Prisma Client (uses prisma devDep, output goes into @prisma/client prodDep)
+# Generate Prisma Client (output goes to node_modules/@prisma/client & node_modules/.prisma)
 RUN cd backend && node_modules/.bin/prisma generate
 # Build frontend (Vite) and backend (tsc)
 RUN pnpm -r run build
 
-# 4. Deploy step — pnpm deploy creates a flat, self-contained node_modules (no symlinks)
-# @prisma/client (with generated code) is a prodDep so it gets included automatically
-FROM base AS deploy
-WORKDIR /app
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY frontend/package.json ./frontend/
-COPY backend/package.json ./backend/
-COPY backend/prisma ./backend/prisma
-COPY backend/src ./backend/src
-# Need all deps so pnpm can resolve the workspace graph
-RUN pnpm install --no-frozen-lockfile
-# Copy generated Prisma client from build stage into the correct location
-COPY --from=build /app/backend/node_modules/.prisma ./backend/node_modules/.prisma
-COPY --from=build /app/backend/dist ./backend/dist
-# pnpm deploy creates a flat standalone directory safe to copy to final image
-RUN pnpm --filter backend deploy --prod /app/backend-standalone
-# Copy compiled code and prisma schema into standalone dir
-COPY --from=build /app/backend/dist /app/backend-standalone/dist
-COPY backend/prisma /app/backend-standalone/prisma
-# Copy the generated prisma client into standalone node_modules
-COPY --from=build /app/backend/node_modules/.prisma /app/backend-standalone/node_modules/.prisma
-
-# 5. Lean production image
+# 4. Lean production image
 FROM node:22-alpine AS runner
 WORKDIR /app
 
 RUN npm install -g pm2
 
-# Copy the self-contained backend (flat node_modules, no symlinks)
-COPY --from=deploy /app/backend-standalone ./backend
+# Copy compiled backend code
+COPY --from=build /app/backend/dist ./backend/dist
+COPY backend/package.json ./backend/package.json
+COPY backend/prisma ./backend/prisma
+
+# Copy the entire backend node_modules (includes @prisma/client with generated code)
+COPY --from=build /app/backend/node_modules ./backend/node_modules
+# Also copy root node_modules which contains the pnpm virtual store (.pnpm folder)
+# This ensures all symlinks inside backend/node_modules resolve correctly
+COPY --from=build /app/node_modules ./node_modules
+
 # Copy built frontend to be served as static files
 COPY --from=build /app/frontend/dist ./frontend/dist
 
