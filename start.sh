@@ -13,9 +13,9 @@ echo "==> DATABASE_URL is set to: $DATABASE_URL"
 printf "DATABASE_URL=%s\n" "$DATABASE_URL" > /app/backend/.env
 printf "DATABASE_URL=%s\n" "$DATABASE_URL" > /app/.env
 
-echo "==> Running prisma migrate deploy..."
+echo "==> Running prisma db push..."
 cd /app/backend
-node_modules/.bin/prisma migrate deploy
+node_modules/.bin/prisma db push
 
 echo "==> Starting server..."
 pm2-runtime start dist/server.js
