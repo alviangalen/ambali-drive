@@ -10,8 +10,8 @@ services:
     ports:
       - "9000:9000" # Port ini yang diekspos (frontend & backend menyatu)
     environment:
-      # Database — points to the 'db' service inside Docker network
-      - DATABASE_URL=postgresql://ambali_user:PasswordSangatKuat123!@db:5432/ambalidrive
+      # Database — points to the 'db-ambali' service inside Docker network
+      - DATABASE_URL=${DATABASE_URL:-postgresql://user_ambali:Kimiicantik123*@db-ambali:5432/ambalidrive}
       # JWT — override in .env on server for security
       - JWT_SECRET=${JWT_SECRET:-rahasiasuperkuat123}
       # Firebase — override in .env on server with real values
@@ -27,17 +27,17 @@ services:
     networks:
       - ambali_network
     depends_on:
-      - db
+      - db-ambali
 
   # 2. Database (PostgreSQL)
-  db:
+  db-ambali:
     image: postgres:15-alpine
     container_name: ambali-db
     restart: always
     environment:
       - POSTGRES_DB=ambalidrive
-      - POSTGRES_USER=ambali_user
-      - POSTGRES_PASSWORD=PasswordSangatKuat123!
+      - POSTGRES_USER=user_ambali
+      - POSTGRES_PASSWORD=Kimiicantik123*
     volumes:
       - ambali_db_data:/var/lib/postgresql/data # Agar data akun tidak hilang saat container mati
     networks:

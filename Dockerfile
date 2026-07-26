@@ -56,9 +56,9 @@ RUN chmod +x /app/start.sh
 
 ENV NODE_ENV=production
 ENV PORT=9000
-# Default DATABASE_URL pointing to the 'db' Docker service.
+# Default DATABASE_URL pointing to the 'db-ambali' Docker service.
 # This is overridden at runtime by the docker-compose environment block.
-ENV DATABASE_URL=postgresql://ambali_user:PasswordSangatKuat123!@db:5432/ambalidrive
+ENV DATABASE_URL=postgresql://user_ambali:Kimiicantik123*@db-ambali:5432/ambalidrive
 EXPOSE 9000
 
 CMD ["/app/start.sh"]

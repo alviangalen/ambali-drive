@@ -3,7 +3,7 @@ set -e
 
 # Pastikan DATABASE_URL tersedia. Gunakan fallback jika tidak ada.
 if [ -z "$DATABASE_URL" ]; then
-  export DATABASE_URL="postgresql://ambali_user:PasswordSangatKuat123!@db:5432/ambalidrive"
+  export DATABASE_URL="postgresql://user_ambali:Kimiicantik123*@db-ambali:5432/ambalidrive"
 fi
 
 echo "==> DATABASE_URL is set to: $DATABASE_URL"
