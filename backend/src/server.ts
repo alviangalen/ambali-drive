@@ -35,7 +35,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Fallback to React index.html for all non-API routes
-app.get('*', (req, res, next) => {
+app.get(/.*/, (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
