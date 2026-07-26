@@ -10,9 +10,21 @@ services:
     ports:
       - "9000:9000" # Port ini yang diekspos (frontend & backend menyatu)
     env_file:
-      - .env
+      - path: .env
+        required: false  # .env is optional; use 'environment' block for defaults
     environment:
+      # Database — points to the 'db' service inside Docker network
       - DATABASE_URL=postgresql://ambali_user:PasswordSangatKuat123!@db:5432/ambalidrive
+      # JWT — override in .env on server for security
+      - JWT_SECRET=${JWT_SECRET:-rahasiasuperkuat123}
+      # Firebase — override in .env on server with real values
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-dummy_project_id}
+      - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL:-dummy@dummy.iam.gserviceaccount.com}
+      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY:-dummy_key}
+      - VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY:-dummy_api_key}
+      - VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN:-dummy.firebaseapp.com}
+      - VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID:-dummy_project_id}
+      - VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID:-dummy_app_id}
     volumes:
       - ./storage:/app/storage # Menyimpan file asli di hardisk
     networks:
