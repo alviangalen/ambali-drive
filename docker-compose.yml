@@ -9,9 +9,6 @@ services:
     restart: always
     ports:
       - "9000:9000" # Port ini yang diekspos (frontend & backend menyatu)
-    env_file:
-      - path: .env
-        required: false  # .env is optional; use 'environment' block for defaults
     environment:
       # Database — points to the 'db' service inside Docker network
       - DATABASE_URL=postgresql://ambali_user:PasswordSangatKuat123!@db:5432/ambalidrive
