@@ -1,0 +1,64 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  passwordHash String?
+  name         String
+  role         String      @default("user")
+  storageQuota BigInt      @default(16106127360) // 15GB in bytes
+  storageUsed  BigInt      @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  files        File[]
+  shares       FileShare[]
+}
+
+model File {
+  id           String        @id @default(uuid())
+  name         String
+  type         String        // 'folder', 'image', 'video', 'pdf', etc.
+  size         BigInt        @default(0)
+  physicalPath String?       // Path on disk, null for folders
+  parentId     String?
+  parent       File?         @relation("FolderChildren", fields: [parentId], references: [id])
+  children     File[]        @relation("FolderChildren")
+  isTrashed    Boolean       @default(false)
+  trashedAt    DateTime?
+  isStarred    Boolean       @default(false)
+  ownerId      String
+  owner        User          @relation(fields: [ownerId], references: [id])
+  shares       FileShare[]
+  publicLink   PublicLink?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model FileShare {
+  id        String   @id @default(uuid())
+  fileId    String
+  file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   // 'viewer', 'editor'
+  createdAt DateTime @default(now())
+
+  @@unique([fileId, userId])
+}
+
+model PublicLink {
+  id            String    @id @default(uuid())
+  fileId        String    @unique
+  file          File      @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  urlHash       String    @unique
+  passwordHash  String?
+  expiresAt     DateTime?
+  allowDownload Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+}

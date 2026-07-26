@@ -1,0 +1,100 @@
+import { useAuthStore } from '../store/authStore';
+
+const BASE_URL = '/api/files';
+
+function getHeaders() {
+  const token = useAuthStore.getState().token;
+  return {
+    'Authorization': `Bearer ${token}`
+  };
+}
+
+export async function fetchFiles(parentId: string | null = null, trashed: boolean = false) {
+  let url = `${BASE_URL}?trashed=${trashed}`;
+  if (parentId) url += `&parentId=${parentId}`;
+  
+  const res = await fetch(url, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch files');
+  return res.json();
+}
+
+export async function createFolder(name: string, parentId: string | null = null) {
+  const res = await fetch(`${BASE_URL}/folder`, {
+    method: 'POST',
+    headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, parentId })
+  });
+  if (!res.ok) throw new Error('Failed to create folder');
+  return res.json();
+}
+
+export async function uploadFile(file: File, parentId: string | null = null) {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (parentId) formData.append('parentId', parentId);
+
+  const res = await fetch(`${BASE_URL}/upload`, {
+    method: 'POST',
+    headers: getHeaders(), // Don't set Content-Type for FormData, browser does it with boundary
+    body: formData
+  });
+  if (!res.ok) throw new Error('Failed to upload file');
+  return res.json();
+}
+
+export async function renameFile(id: string, name: string) {
+  const res = await fetch(`${BASE_URL}/${id}/rename`, {
+    method: 'PUT',
+    headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name })
+  });
+  if (!res.ok) throw new Error('Failed to rename');
+  return res.json();
+}
+
+export async function trashFile(id: string) {
+  const res = await fetch(`${BASE_URL}/${id}/trash`, {
+    method: 'PUT',
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error('Failed to trash');
+  return res.json();
+}
+
+export async function restoreFile(id: string) {
+  const res = await fetch(`${BASE_URL}/${id}/restore`, {
+    method: 'PUT',
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error('Failed to restore');
+  return res.json();
+}
+
+export async function deleteFile(id: string) {
+  const res = await fetch(`${BASE_URL}/${id}`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error('Failed to delete');
+  return res.json();
+}
+
+export async function moveFile(id: string, parentId: string | null) {
+  const res = await fetch(`${BASE_URL}/${id}/move`, {
+    method: 'PUT',
+    headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ parentId })
+  });
+  if (!res.ok) throw new Error('Failed to move');
+  return res.json();
+}
+
+export async function createShareLink(id: string, allowDownload: boolean = true) {
+  const res = await fetch(`/api/share/${id}/link`, {
+    method: 'POST',
+    headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ allowDownload })
+  });
+  if (!res.ok) throw new Error('Failed to create share link');
+  return res.json();
+}

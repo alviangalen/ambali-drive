@@ -1,0 +1,43 @@
+
+services:
+  # 1. Aplikasi Web (Backend & Frontend)
+  ambali-drive-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ambali-drive:latest
+    restart: always
+    ports:
+      - "9000:9000" # Port ini yang diekspos (frontend & backend menyatu)
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://ambali_user:PasswordSangatKuat123!@db:5432/ambalidrive
+    volumes:
+      - ./storage:/app/storage # Menyimpan file asli di hardisk
+    networks:
+      - ambali_network
+    depends_on:
+      - db
+
+  # 2. Database (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: ambali-db
+    restart: always
+    environment:
+      - POSTGRES_DB=ambalidrive
+      - POSTGRES_USER=ambali_user
+      - POSTGRES_PASSWORD=PasswordSangatKuat123!
+    volumes:
+      - ambali_db_data:/var/lib/postgresql/data # Agar data akun tidak hilang saat container mati
+    networks:
+      - ambali_network
+    # PERHATIKAN: Tidak ada blok 'ports:' di sini. 
+    # Artinya database terisolasi, tidak bisa di-hack dari luar.
+
+networks:
+  ambali_network:
+
+volumes:
+  ambali_db_data:

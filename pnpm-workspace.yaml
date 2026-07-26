@@ -1,0 +1,12 @@
+packages:
+  - 'frontend'
+  - 'backend'
+
+allowBuilds:
+  '@firebase/util': set this to true or false
+  '@prisma/engines': set this to true or false
+  prisma: set this to true or false
+  protobufjs: set this to true or false
+
+minimumReleaseAgeExclude:
+  - lucide-react@1.27.0

@@ -1,0 +1,1403 @@
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import {
+  Folder, FileText, FileImage, FileVideo, Music, FileArchive, File,
+  Upload, Download, Plus, Search, Star, Share2, Trash2, MoreVertical,
+  LayoutGrid, List, ChevronRight, Clock, Users, X, Copy, Link, Eye,
+  EyeOff, Calendar, Lock, RotateCcw, Pencil, ArrowLeft, Home,
+  ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, Shield, FolderPlus,
+  Check, AlertTriangle, Move, LogOut, Settings, HelpCircle, Bell,
+  ChevronDown, Play, Pause, Volume2, VolumeX, Maximize2, SkipBack,
+  SkipForward, CheckCircle2
+} from 'lucide-react'
+import ambaliLogo from '@/imports/ambalilogocrop-removebg-preview.png'
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+type FileType = 'folder' | 'image' | 'video' | 'audio' | 'pdf' | 'doc' | 'spreadsheet' | 'archive' | 'other'
+type Role = 'owner' | 'editor' | 'viewer'
+type NavSection = 'myDrive' | 'recent' | 'starred' | 'shared' | 'trash'
+
+interface SharedUser { id: string; name: string; email: string; initials: string; color: string; role: Role }
+interface ShareLink { url: string; password: string | null; expiresAt: string | null; allowDownload: boolean }
+interface DriveItem {
+  id: string; name: string; type: FileType; size: number; modified: string
+  starred: boolean; trashed: boolean; trashedAt?: string; parentId: string | null
+  sharedWith: SharedUser[]; shareLink: ShareLink | null; thumbnailUrl?: string; owner: string
+}
+interface UploadItem { id: string; name: string; size: number; progress: number; done: boolean }
+interface CtxMenu { x: number; y: number; itemId: string }
+
+// ─── Mock Users ──────────────────────────────────────────────────────────────
+const ME = { id: 'u1', name: 'Aditya Pratama', email: 'aditya@ambali.io', initials: 'AP' }
+const QUOTA = 15 * 1024 ** 3
+const USED_BYTES = 9.31 * 1024 ** 3
+
+const SU: SharedUser[] = [
+  { id: 'u2', name: 'Sinta Dewi', email: 'sinta@ambali.io', initials: 'SD', color: '#7C3AED', role: 'editor' },
+  { id: 'u3', name: 'Raka Nugraha', email: 'raka@ambali.io', initials: 'RN', color: '#059669', role: 'viewer' },
+  { id: 'u4', name: 'Maya Putri', email: 'maya@ambali.io', initials: 'MP', color: '#DC2626', role: 'viewer' },
+]
+
+// ─── Mock Data ───────────────────────────────────────────────────────────────
+const INIT: DriveItem[] = [
+  { id: 'f-docs', name: 'Documents', type: 'folder', size: 856*1024*1024, modified: '2024-11-28T09:00:00Z', starred: false, trashed: false, parentId: null, sharedWith: [SU[0]], shareLink: null, owner: 'u1' },
+  { id: 'f-imgs', name: 'Images', type: 'folder', size: 2340*1024*1024, modified: '2024-11-27T14:30:00Z', starred: true, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
+  { id: 'f-vids', name: 'Videos', type: 'folder', size: 4120*1024*1024, modified: '2024-11-25T11:00:00Z', starred: false, trashed: false, parentId: null, sharedWith: [SU[1], SU[2]], shareLink: null, owner: 'u1' },
+  { id: 'f-design', name: 'Design Assets', type: 'folder', size: 1420*1024*1024, modified: '2024-11-20T16:45:00Z', starred: false, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
+  { id: 'f-proj', name: 'Projects', type: 'folder', size: 320*1024*1024, modified: '2024-11-15T10:00:00Z', starred: false, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
+  { id: 'file-ar', name: 'Annual Report 2024.pdf', type: 'pdf', size: 4.2*1024*1024, modified: '2024-11-29T08:00:00Z', starred: true, trashed: false, parentId: null, sharedWith: [SU[0]], shareLink: { url: 'https://drive.ambali.io/s/ar2024-xk92j', password: null, expiresAt: null, allowDownload: true }, owner: 'u1' },
+  { id: 'file-budget', name: 'Budget Overview Q4.xlsx', type: 'spreadsheet', size: 156*1024, modified: '2024-11-28T15:30:00Z', starred: false, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
+  { id: 'file-readme', name: 'README.md', type: 'doc', size: 12*1024, modified: '2024-11-22T09:00:00Z', starred: false, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
+  // Documents
+  { id: 'file-q4', name: 'Q4 Financial Report.pdf', type: 'pdf', size: 1.2*1024*1024, modified: '2024-11-26T10:00:00Z', starred: true, trashed: false, parentId: 'f-docs', sharedWith: [SU[0], SU[1]], shareLink: null, owner: 'u1' },
+  { id: 'file-proposal', name: 'Project Proposal.docx', type: 'doc', size: 245*1024, modified: '2024-11-24T14:00:00Z', starred: false, trashed: false, parentId: 'f-docs', sharedWith: [], shareLink: null, owner: 'u1' },
+  { id: 'file-notes', name: 'Meeting Notes Nov 2024.docx', type: 'doc', size: 89*1024, modified: '2024-11-23T16:00:00Z', starred: false, trashed: false, parentId: 'f-docs', sharedWith: [], shareLink: null, owner: 'u1' },
+  { id: 'file-contract', name: 'Service Agreement.pdf', type: 'pdf', size: 890*1024, modified: '2024-11-18T09:30:00Z', starred: false, trashed: false, parentId: 'f-docs', sharedWith: [SU[2]], shareLink: null, owner: 'u1' },
+  // Images
+  { id: 'file-beach', name: 'Bali Beach Sunset.jpg', type: 'image', size: 3.4*1024*1024, modified: '2024-11-20T18:00:00Z', starred: false, trashed: false, parentId: 'f-imgs', sharedWith: [], shareLink: null, owner: 'u1', thumbnailUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=280&fit=crop&auto=format' },
+  { id: 'file-team', name: 'Team Photo 2024.jpg', type: 'image', size: 2.8*1024*1024, modified: '2024-11-15T12:00:00Z', starred: false, trashed: false, parentId: 'f-imgs', sharedWith: [], shareLink: null, owner: 'u1', thumbnailUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&h=280&fit=crop&auto=format' },
+  { id: 'file-product', name: 'Product Launch Event.jpg', type: 'image', size: 5.1*1024*1024, modified: '2024-11-10T09:00:00Z', starred: false, trashed: false, parentId: 'f-imgs', sharedWith: [], shareLink: null, owner: 'u1', thumbnailUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=280&fit=crop&auto=format' },
+  { id: 'file-office', name: 'Office Interior.jpg', type: 'image', size: 4.2*1024*1024, modified: '2024-10-28T11:30:00Z', starred: false, trashed: false, parentId: 'f-imgs', sharedWith: [], shareLink: null, owner: 'u1', thumbnailUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=280&fit=crop&auto=format' },
+  // Videos
+  { id: 'file-demo', name: 'Product Demo v2.mp4', type: 'video', size: 45.2*1024*1024, modified: '2024-11-28T11:00:00Z', starred: true, trashed: false, parentId: 'f-vids', sharedWith: [SU[0]], shareLink: null, owner: 'u1' },
+  { id: 'file-tutorial', name: 'Onboarding Tutorial.mp4', type: 'video', size: 89.4*1024*1024, modified: '2024-11-22T15:00:00Z', starred: false, trashed: false, parentId: 'f-vids', sharedWith: [], shareLink: null, owner: 'u1' },
+  { id: 'file-podcast', name: 'Company Podcast Ep 12.mp3', type: 'audio', size: 28.6*1024*1024, modified: '2024-11-19T10:00:00Z', starred: false, trashed: false, parentId: 'f-vids', sharedWith: [], shareLink: null, owner: 'u1' },
+  // Design
+  { id: 'file-logos', name: 'Brand Logos Package.zip', type: 'archive', size: 12.3*1024*1024, modified: '2024-11-21T13:00:00Z', starred: false, trashed: false, parentId: 'f-design', sharedWith: [], shareLink: null, owner: 'u1' },
+  { id: 'file-figma', name: 'App Mockups v3.fig', type: 'other', size: 8.9*1024*1024, modified: '2024-11-19T16:30:00Z', starred: false, trashed: false, parentId: 'f-design', sharedWith: [SU[0]], shareLink: null, owner: 'u1' },
+  { id: 'file-icons', name: 'Icon Set.zip', type: 'archive', size: 4.2*1024*1024, modified: '2024-11-14T09:00:00Z', starred: false, trashed: false, parentId: 'f-design', sharedWith: [], shareLink: null, owner: 'u1' },
+  // Trash
+  { id: 'trash-1', name: 'Old Draft v1.docx', type: 'doc', size: 45*1024, modified: '2024-11-10T12:00:00Z', starred: false, trashed: true, trashedAt: '2024-11-25T10:00:00Z', parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
+  { id: 'trash-2', name: 'Archive 2023', type: 'folder', size: 234*1024*1024, modified: '2023-12-31T23:59:00Z', starred: false, trashed: true, trashedAt: '2024-11-20T09:00:00Z', parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
+  { id: 'trash-3', name: 'temp_backup.zip', type: 'archive', size: 512*1024*1024, modified: '2024-11-01T08:00:00Z', starred: false, trashed: true, trashedAt: '2024-11-18T14:00:00Z', parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
+]
+
+const SHARED_WITH_ME: DriveItem[] = [
+  { id: 'shared-1', name: 'Q3 Sales Report.xlsx', type: 'spreadsheet', size: 2.1*1024*1024, modified: '2024-11-27T09:00:00Z', starred: false, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u2' },
+  { id: 'shared-2', name: 'Marketing Campaign Assets', type: 'folder', size: 890*1024*1024, modified: '2024-11-26T14:00:00Z', starred: false, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u3' },
+  { id: 'shared-3', name: 'Brand Guidelines 2024.pdf', type: 'pdf', size: 8.4*1024*1024, modified: '2024-11-20T10:00:00Z', starred: false, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u4' },
+]
+
+const OWNER_NAMES: Record<string, string> = { u1: ME.name, u2: SU[0].name, u3: SU[1].name, u4: SU[2].name }
+
+// ─── Utilities ───────────────────────────────────────────────────────────────
+function fmtBytes(b: number) {
+  if (b < 1024) return b + ' B'
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB'
+  if (b < 1073741824) return (b/1048576).toFixed(1) + ' MB'
+  return (b/1073741824).toFixed(2) + ' GB'
+}
+function fmtDate(iso: string) {
+  const d = new Date(iso), now = new Date()
+  const days = Math.floor((now.getTime() - d.getTime()) / 86400000)
+  if (days === 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  if (days < 7) return `${days} days ago`
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+function genId() { return Math.random().toString(36).slice(2, 10) }
+
+// ─── File Icon ────────────────────────────────────────────────────────────────
+const COLORS: Record<FileType, string> = {
+  folder: '#F59E0B', image: '#8B5CF6', video: '#EF4444', audio: '#EC4899',
+  pdf: '#EF4444', doc: '#2563EB', spreadsheet: '#16A34A', archive: '#78716C', other: '#6B7280'
+}
+function FIcon({ type, size = 18, className = '' }: { type: FileType; size?: number; className?: string }) {
+  const c = COLORS[type], p = { size, color: c, strokeWidth: 1.75, className }
+  if (type === 'folder') return <Folder {...p} />
+  if (type === 'image') return <FileImage {...p} />
+  if (type === 'video') return <FileVideo {...p} />
+  if (type === 'audio') return <Music {...p} />
+  if (type === 'archive') return <FileArchive {...p} />
+  return <FileText {...p} />
+}
+
+// ─── Avatar ──────────────────────────────────────────────────────────────────
+function Avatar({ initials, color, size = 28 }: { initials: string; color: string; size?: number }) {
+  return (
+    <div
+      style={{ width: size, height: size, background: color, fontSize: size * 0.36 }}
+      className="rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0"
+    >
+      {initials}
+    </div>
+  )
+}
+
+// ─── Modal Wrapper ────────────────────────────────────────────────────────────
+function Modal({ onClose, children, width = 'max-w-lg' }: { onClose: () => void; children: React.ReactNode; width?: string }) {
+  useEffect(() => {
+    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', fn)
+    return () => window.removeEventListener('keydown', fn)
+  }, [onClose])
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
+      <div
+        className={`relative bg-white rounded-2xl shadow-2xl w-full ${width} slide-up overflow-hidden`}
+        onClick={e => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// ─── Preview Modal ────────────────────────────────────────────────────────────
+function PreviewModal({ item, siblings, onClose }: { item: DriveItem; siblings: DriveItem[]; onClose: () => void }) {
+  const imgSiblings = siblings.filter(s => s.type === 'image')
+  const idx = imgSiblings.findIndex(s => s.id === item.id)
+  const [current, setCurrent] = useState(item)
+  const [zoom, setZoom] = useState(1)
+  const [playing, setPlaying] = useState(false)
+  const [muted, setMuted] = useState(false)
+
+  const prev = () => {
+    const newIdx = (imgSiblings.findIndex(s => s.id === current.id) - 1 + imgSiblings.length) % imgSiblings.length
+    setCurrent(imgSiblings[newIdx])
+    setZoom(1)
+  }
+  const next = () => {
+    const newIdx = (imgSiblings.findIndex(s => s.id === current.id) + 1) % imgSiblings.length
+    setCurrent(imgSiblings[newIdx])
+    setZoom(1)
+  }
+
+  useEffect(() => {
+    const fn = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') prev()
+      if (e.key === 'ArrowRight') next()
+    }
+    if (current.type === 'image') window.addEventListener('keydown', fn)
+    return () => window.removeEventListener('keydown', fn)
+  }, [current])
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-gray-950/95 backdrop-blur-sm" onClick={onClose}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-3 text-white" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-3">
+          <FIcon type={current.type} size={18} />
+          <span className="font-medium text-sm text-white/90">{current.name}</span>
+          <span className="text-white/40 text-xs">{fmtBytes(current.size)}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {current.type === 'image' && (
+            <>
+              <button onClick={() => setZoom(z => Math.max(0.5, z - 0.25))} className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-colors">
+                <ZoomOut size={16} />
+              </button>
+              <span className="text-white/40 text-xs w-10 text-center">{Math.round(zoom * 100)}%</span>
+              <button onClick={() => setZoom(z => Math.min(3, z + 0.25))} className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-colors">
+                <ZoomIn size={16} />
+              </button>
+            </>
+          )}
+          <button className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-colors">
+            <Download size={16} />
+          </button>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 flex items-center justify-center overflow-hidden px-4 pb-4" onClick={e => e.stopPropagation()}>
+        {current.type === 'image' && (
+          <div className="relative flex items-center justify-center w-full h-full">
+            {imgSiblings.length > 1 && (
+              <button onClick={prev} className="absolute left-2 z-10 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors">
+                <ChevronLeft size={20} />
+              </button>
+            )}
+            <img
+              src={current.thumbnailUrl}
+              alt={current.name}
+              style={{ transform: `scale(${zoom})`, transition: 'transform 0.2s' }}
+              className="max-w-full max-h-full object-contain rounded-lg"
+            />
+            {imgSiblings.length > 1 && (
+              <button onClick={next} className="absolute right-2 z-10 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors">
+                <ChevronRight size={20} />
+              </button>
+            )}
+          </div>
+        )}
+        {current.type === 'video' && (
+          <div className="flex flex-col items-center gap-6">
+            <div className="w-full max-w-2xl aspect-video bg-gray-900 rounded-xl flex items-center justify-center border border-white/10">
+              <div className="text-center text-white/40">
+                <FileVideo size={56} strokeWidth={1} className="mx-auto mb-3" />
+                <p className="text-sm">Video preview</p>
+                <p className="text-xs text-white/25 mt-1">{current.name}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-white/70">
+              <button className="p-2 hover:text-white transition-colors"><SkipBack size={18} /></button>
+              <button onClick={() => setPlaying(!playing)} className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
+                {playing ? <Pause size={20} /> : <Play size={20} />}
+              </button>
+              <button className="p-2 hover:text-white transition-colors"><SkipForward size={18} /></button>
+              <button onClick={() => setMuted(!muted)} className="p-2 hover:text-white transition-colors">
+                {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+              </button>
+            </div>
+          </div>
+        )}
+        {current.type === 'audio' && (
+          <div className="flex flex-col items-center gap-6">
+            <div className="w-64 h-64 bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-2xl border border-white/10 flex items-center justify-center">
+              <Music size={72} color="#EC4899" strokeWidth={1} />
+            </div>
+            <div className="text-center">
+              <p className="text-white font-medium">{current.name}</p>
+              <p className="text-white/40 text-sm mt-1">{fmtBytes(current.size)}</p>
+            </div>
+            <div className="flex items-center gap-4 text-white/70">
+              <button className="p-2 hover:text-white transition-colors"><SkipBack size={18} /></button>
+              <button onClick={() => setPlaying(!playing)} className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
+                {playing ? <Pause size={20} /> : <Play size={20} />}
+              </button>
+              <button className="p-2 hover:text-white transition-colors"><SkipForward size={18} /></button>
+            </div>
+          </div>
+        )}
+        {current.type === 'pdf' && (
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-full max-w-2xl h-[60vh] bg-white rounded-xl flex items-center justify-center border border-white/10">
+              <div className="text-center text-gray-400">
+                <FileText size={56} strokeWidth={1} color="#EF4444" className="mx-auto mb-3" />
+                <p className="text-sm text-gray-500">PDF Preview</p>
+                <p className="text-xs text-gray-400 mt-1">{current.name}</p>
+                <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto">
+                  <Download size={14} /> Download to view
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Thumbnail strip for images */}
+      {current.type === 'image' && imgSiblings.length > 1 && (
+        <div className="flex justify-center gap-2 pb-4 overflow-x-auto hide-scrollbar px-4" onClick={e => e.stopPropagation()}>
+          {imgSiblings.map(s => (
+            <button
+              key={s.id}
+              onClick={() => { setCurrent(s); setZoom(1) }}
+              className={`flex-shrink-0 w-14 h-10 rounded overflow-hidden transition-all ${s.id === current.id ? 'ring-2 ring-blue-400 opacity-100' : 'opacity-40 hover:opacity-70'}`}
+            >
+              <img src={s.thumbnailUrl} alt={s.name} className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Share Modal ──────────────────────────────────────────────────────────────
+function ShareModal({ item, onClose, onUpdate }: { item: DriveItem; onClose: () => void; onUpdate: (item: DriveItem) => void }) {
+  const [tab, setTab] = useState<'people' | 'link'>('people')
+  const [emailInput, setEmailInput] = useState('')
+  const [roleInput, setRoleInput] = useState<Role>('viewer')
+  const [shared, setShared] = useState<SharedUser[]>(item.sharedWith)
+  const [link, setLink] = useState<ShareLink>(item.shareLink ?? { url: `https://drive.ambali.io/s/${genId()}`, password: null, expiresAt: null, allowDownload: true })
+  const [linkActive, setLinkActive] = useState(!!item.shareLink)
+  const [copied, setCopied] = useState(false)
+  const [showPwInput, setShowPwInput] = useState(false)
+  const [pwValue, setPwValue] = useState(item.shareLink?.password ?? '')
+  const [showExpiry, setShowExpiry] = useState(!!item.shareLink?.expiresAt)
+  const [expiryValue, setExpiryValue] = useState(item.shareLink?.expiresAt?.split('T')[0] ?? '')
+  const [pwVisible, setPwVisible] = useState(false)
+
+  const addPerson = () => {
+    if (!emailInput.trim()) return
+    const initials = emailInput.split('@')[0].slice(0, 2).toUpperCase()
+    const colors = ['#7C3AED', '#059669', '#DC2626', '#0284C7', '#D97706']
+    setShared(s => [...s, {
+      id: genId(), name: emailInput.split('@')[0], email: emailInput,
+      initials, color: colors[shared.length % colors.length], role: roleInput
+    }])
+    setEmailInput('')
+  }
+  const removeUser = (id: string) => setShared(s => s.filter(u => u.id !== id))
+  const changeRole = (id: string, role: Role) => setShared(s => s.map(u => u.id === id ? { ...u, role } : u))
+
+  const copyLink = () => {
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const save = () => {
+    onUpdate({
+      ...item,
+      sharedWith: shared,
+      shareLink: linkActive ? { ...link, password: showPwInput && pwValue ? pwValue : null, expiresAt: showExpiry && expiryValue ? expiryValue + 'T23:59:00Z' : null } : null,
+    })
+    onClose()
+  }
+
+  return (
+    <Modal onClose={onClose} width="max-w-xl">
+      <div className="px-6 pt-5 pb-2 border-b border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900">Share "{item.name}"</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Manage access and sharing settings</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"><X size={16} className="text-gray-400" /></button>
+        </div>
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+          {(['people', 'link'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)} className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all capitalize ${tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              {t === 'people' ? <span className="flex items-center justify-center gap-1.5"><Users size={13} />{t}</span> : <span className="flex items-center justify-center gap-1.5"><Link size={13} />{t}</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="px-6 py-4 max-h-[60vh] overflow-y-auto">
+        {tab === 'people' && (
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <input
+                value={emailInput} onChange={e => setEmailInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addPerson()}
+                placeholder="Add people by email…"
+                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50/50"
+              />
+              <select value={roleInput} onChange={e => setRoleInput(e.target.value as Role)} className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-gray-50/50 text-gray-700">
+                <option value="viewer">Viewer</option>
+                <option value="editor">Editor</option>
+              </select>
+              <button onClick={addPerson} className="px-4 py-2 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0D4A8A] transition-colors">Share</button>
+            </div>
+
+            <div className="space-y-1">
+              {/* Owner */}
+              <div className="flex items-center gap-3 py-2 px-3 rounded-xl bg-gray-50/50">
+                <Avatar initials={ME.initials} color="#1054A0" size={32} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{ME.name} <span className="text-gray-400 font-normal">(you)</span></p>
+                  <p className="text-xs text-gray-400 truncate">{ME.email}</p>
+                </div>
+                <span className="text-xs text-gray-400 font-medium px-2 py-1 bg-gray-200 rounded-lg">Owner</span>
+              </div>
+              {shared.map(u => (
+                <div key={u.id} className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-gray-50 group">
+                  <Avatar initials={u.initials} color={u.color} size={32} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{u.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                  </div>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <select value={u.role} onChange={e => changeRole(u.id, e.target.value as Role)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none bg-white text-gray-700">
+                      <option value="viewer">Viewer</option>
+                      <option value="editor">Editor</option>
+                    </select>
+                    <button onClick={() => removeUser(u.id)} className="p-1 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-500 transition-colors"><X size={14} /></button>
+                  </div>
+                  <span className={`text-xs font-medium px-2 py-1 rounded-lg group-hover:hidden ${u.role === 'editor' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>{u.role}</span>
+                </div>
+              ))}
+              {shared.length === 0 && (
+                <p className="text-sm text-gray-400 text-center py-6">No one else has access yet</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {tab === 'link' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-xl">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${linkActive ? 'bg-blue-100' : 'bg-gray-200'}`}>
+                  {linkActive ? <Globe size={15} color="#1054A0" /> : <Lock size={15} className="text-gray-400" />}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{linkActive ? 'Anyone with the link' : 'Restricted'}</p>
+                  <p className="text-xs text-gray-400">{linkActive ? 'Link sharing is on' : 'Only people with access'}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setLinkActive(!linkActive)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${linkActive ? 'bg-[#1054A0]' : 'bg-gray-300'}`}
+              >
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${linkActive ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+
+            {linkActive && (
+              <div className="space-y-3 fade-in">
+                <div className="flex gap-2">
+                  <div className="flex-1 flex items-center gap-2 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600 truncate">
+                    <Link size={13} className="text-gray-400 flex-shrink-0" />
+                    <span className="truncate text-xs">{link.url}</span>
+                  </div>
+                  <button onClick={copyLink} className={`px-4 py-2.5 text-sm font-medium rounded-xl transition-all flex items-center gap-1.5 ${copied ? 'bg-green-100 text-green-700' : 'bg-[#1054A0] text-white hover:bg-[#0D4A8A]'}`}>
+                    {copied ? <><Check size={13} />Copied</> : <><Copy size={13} />Copy</>}
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {/* Password */}
+                  <div className="flex items-center justify-between py-2.5 px-3 bg-gray-50 rounded-xl">
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <Lock size={14} className="text-gray-400" />
+                      Password protection
+                    </div>
+                    <button
+                      onClick={() => setShowPwInput(!showPwInput)}
+                      className={`relative w-9 h-5 rounded-full transition-colors ${showPwInput ? 'bg-[#1054A0]' : 'bg-gray-300'}`}
+                    >
+                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${showPwInput ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                    </button>
+                  </div>
+                  {showPwInput && (
+                    <div className="relative">
+                      <input
+                        type={pwVisible ? 'text' : 'password'}
+                        value={pwValue} onChange={e => setPwValue(e.target.value)}
+                        placeholder="Set link password…"
+                        className="w-full px-3 py-2 pr-10 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-gray-50/50"
+                      />
+                      <button onClick={() => setPwVisible(!pwVisible)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        {pwVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Expiry */}
+                  <div className="flex items-center justify-between py-2.5 px-3 bg-gray-50 rounded-xl">
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <Calendar size={14} className="text-gray-400" />
+                      Expiration date
+                    </div>
+                    <button
+                      onClick={() => setShowExpiry(!showExpiry)}
+                      className={`relative w-9 h-5 rounded-full transition-colors ${showExpiry ? 'bg-[#1054A0]' : 'bg-gray-300'}`}
+                    >
+                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${showExpiry ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                    </button>
+                  </div>
+                  {showExpiry && (
+                    <input
+                      type="date" value={expiryValue} onChange={e => setExpiryValue(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-gray-50/50 text-gray-700"
+                    />
+                  )}
+
+                  {/* Allow download */}
+                  <div className="flex items-center justify-between py-2.5 px-3 bg-gray-50 rounded-xl">
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <Download size={14} className="text-gray-400" />
+                      Allow download
+                    </div>
+                    <button
+                      onClick={() => setLink(l => ({ ...l, allowDownload: !l.allowDownload }))}
+                      className={`relative w-9 h-5 rounded-full transition-colors ${link.allowDownload ? 'bg-[#1054A0]' : 'bg-gray-300'}`}
+                    >
+                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${link.allowDownload ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+        <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
+        <button onClick={save} className="px-5 py-2 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0D4A8A] transition-colors">Save</button>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── Rename Modal ─────────────────────────────────────────────────────────────
+function RenameModal({ item, onClose, onRename }: { item: DriveItem; onClose: () => void; onRename: (id: string, name: string) => void }) {
+  const [name, setName] = useState(item.name)
+  const inputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => { inputRef.current?.select() }, [])
+
+  const submit = () => {
+    if (name.trim()) { onRename(item.id, name.trim()); onClose() }
+  }
+
+  return (
+    <Modal onClose={onClose} width="max-w-sm">
+      <div className="p-6">
+        <h2 className="text-base font-semibold text-gray-900 mb-4">Rename</h2>
+        <input
+          ref={inputRef} value={name} onChange={e => setName(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') onClose() }}
+          className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50/50 text-gray-900"
+        />
+        <div className="flex justify-end gap-2 mt-4">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
+          <button onClick={submit} className="px-5 py-2 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0D4A8A] transition-colors">Rename</button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── New Folder Modal ─────────────────────────────────────────────────────────
+function NewFolderModal({ onClose, onCreate }: { onClose: () => void; onCreate: (name: string) => void }) {
+  const [name, setName] = useState('Untitled folder')
+  const inputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => { inputRef.current?.select() }, [])
+
+  const submit = () => {
+    if (name.trim()) { onCreate(name.trim()); onClose() }
+  }
+
+  return (
+    <Modal onClose={onClose} width="max-w-sm">
+      <div className="p-6">
+        <h2 className="text-base font-semibold text-gray-900 mb-4">New folder</h2>
+        <input
+          ref={inputRef} value={name} onChange={e => setName(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') onClose() }}
+          className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50/50 text-gray-900"
+        />
+        <div className="flex justify-end gap-2 mt-4">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
+          <button onClick={submit} className="px-5 py-2 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0D4A8A] transition-colors">Create</button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── Empty Trash Modal ────────────────────────────────────────────────────────
+function EmptyTrashModal({ count, onClose, onConfirm }: { count: number; onClose: () => void; onConfirm: () => void }) {
+  return (
+    <Modal onClose={onClose} width="max-w-sm">
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <AlertTriangle size={18} color="#DC2626" />
+          </div>
+          <h2 className="text-base font-semibold text-gray-900">Empty trash?</h2>
+        </div>
+        <p className="text-sm text-gray-500 leading-relaxed">
+          {count} item{count !== 1 ? 's' : ''} will be permanently deleted and cannot be recovered.
+        </p>
+        <div className="flex justify-end gap-2 mt-5">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
+          <button onClick={() => { onConfirm(); onClose() }} className="px-5 py-2 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 transition-colors">Empty trash</button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── Move Modal ───────────────────────────────────────────────────────────────
+function MoveModal({ item, allItems, onClose, onMove }: { item: DriveItem; allItems: DriveItem[]; onClose: () => void; onMove: (itemId: string, targetId: string | null) => void }) {
+  const [selected, setSelected] = useState<string | null>(item.parentId)
+  const folders = allItems.filter(i => i.type === 'folder' && !i.trashed && i.id !== item.id)
+
+  return (
+    <Modal onClose={onClose} width="max-w-sm">
+      <div className="p-6">
+        <h2 className="text-base font-semibold text-gray-900 mb-3">Move to…</h2>
+        <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100 max-h-56 overflow-y-auto">
+          <button
+            onClick={() => setSelected(null)}
+            className={`flex items-center gap-2.5 w-full px-4 py-3 text-sm hover:bg-gray-50 transition-colors text-left ${selected === null ? 'bg-blue-50 text-[#1054A0]' : 'text-gray-700'}`}
+          >
+            <Home size={14} className={selected === null ? 'text-[#1054A0]' : 'text-gray-400'} />
+            My Drive (root)
+          </button>
+          {folders.map(f => (
+            <button
+              key={f.id}
+              onClick={() => setSelected(f.id)}
+              className={`flex items-center gap-2.5 w-full px-4 py-3 text-sm hover:bg-gray-50 transition-colors text-left ${selected === f.id ? 'bg-blue-50 text-[#1054A0]' : 'text-gray-700'}`}
+            >
+              <Folder size={14} color={selected === f.id ? '#1054A0' : '#F59E0B'} />
+              {f.name}
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-end gap-2 mt-4">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
+          <button onClick={() => { onMove(item.id, selected); onClose() }} className="px-5 py-2 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0D4A8A] transition-colors">Move here</button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── Upload Toast ─────────────────────────────────────────────────────────────
+function UploadToast({ files, onDone }: { files: UploadItem[]; onDone: () => void }) {
+  const allDone = files.every(f => f.done)
+  return (
+    <div className="fixed bottom-5 right-5 z-50 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden slide-up">
+      <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          {allDone ? <CheckCircle2 size={15} color="#16A34A" /> : <CloudUpload size={15} color="#1054A0" />}
+          <span className="text-sm font-medium text-gray-800">
+            {allDone ? 'Upload complete' : `Uploading ${files.length} file${files.length !== 1 ? 's' : ''}…`}
+          </span>
+        </div>
+        {allDone && <button onClick={onDone} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={14} /></button>}
+      </div>
+      <div className="p-3 space-y-2.5 max-h-48 overflow-y-auto">
+        {files.map(f => (
+          <div key={f.id}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-600 truncate flex-1 mr-2">{f.name}</span>
+              <span className="text-xs text-gray-400 flex-shrink-0">{f.done ? fmtBytes(f.size) : `${f.progress}%`}</span>
+            </div>
+            <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${f.done ? 'bg-green-500' : 'progress-bar'}`}
+                style={{ width: `${f.progress}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Context Menu ─────────────────────────────────────────────────────────────
+function ContextMenu({
+  ctx, item, section, onClose, onPreview, onStar, onShare, onRename, onMove, onTrash, onRestore, onDelete
+}: {
+  ctx: CtxMenu; item: DriveItem; section: NavSection; onClose: () => void
+  onPreview: () => void; onStar: () => void; onShare: () => void; onRename: () => void
+  onMove: () => void; onTrash: () => void; onRestore: () => void; onDelete: () => void
+}) {
+  const menuRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const fn = (e: MouseEvent) => { if (menuRef.current && !menuRef.current.contains(e.target as Node)) onClose() }
+    setTimeout(() => window.addEventListener('mousedown', fn), 0)
+    return () => window.removeEventListener('mousedown', fn)
+  }, [])
+
+  const style: React.CSSProperties = {
+    position: 'fixed',
+    top: Math.min(ctx.y, window.innerHeight - 300),
+    left: Math.min(ctx.x, window.innerWidth - 210),
+    zIndex: 100
+  }
+
+  const MenuItem = ({ icon: Icon, label, onClick, danger = false }: { icon: React.ComponentType<any>; label: string; onClick: () => void; danger?: boolean }) => (
+    <button
+      onClick={() => { onClick(); onClose() }}
+      className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left ${danger ? 'text-red-600 hover:bg-red-50' : 'text-gray-700 hover:bg-gray-100'}`}
+    >
+      <Icon size={14} className={danger ? 'text-red-400' : 'text-gray-400'} />
+      {label}
+    </button>
+  )
+
+  return (
+    <div ref={menuRef} style={style} className="w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 fade-in overflow-hidden">
+      {section === 'trash' ? (
+        <>
+          <MenuItem icon={RotateCcw} label="Restore" onClick={onRestore} />
+          <div className="h-px bg-gray-100 my-1" />
+          <MenuItem icon={Trash2} label="Delete permanently" onClick={onDelete} danger />
+        </>
+      ) : (
+        <>
+          {item.type !== 'folder' && (
+            <MenuItem icon={Eye} label="Preview" onClick={onPreview} />
+          )}
+          <MenuItem icon={Download} label="Download" onClick={() => {}} />
+          <div className="h-px bg-gray-100 my-1" />
+          <MenuItem icon={Star} label={item.starred ? 'Remove from starred' : 'Add to starred'} onClick={onStar} />
+          <MenuItem icon={Share2} label="Share" onClick={onShare} />
+          <div className="h-px bg-gray-100 my-1" />
+          <MenuItem icon={Pencil} label="Rename" onClick={onRename} />
+          <MenuItem icon={Move} label="Move to…" onClick={onMove} />
+          <div className="h-px bg-gray-100 my-1" />
+          <MenuItem icon={Trash2} label="Move to trash" onClick={onTrash} danger />
+        </>
+      )}
+    </div>
+  )
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, createShareLink } from '../lib/api'
+import { useAuthStore } from '../store/authStore'
+
+export default function Drive() {
+  const [items, setItems] = useState<DriveItem[]>([])
+  const [loadingItems, setLoadingItems] = useState(false)
+  const [section, setSection] = useState<NavSection>('myDrive')
+  const [folderId, setFolderId] = useState<string | null>(null)
+  const [folderHistory, setFolderHistory] = useState<string[]>([])
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const logout = useAuthStore(s => s.logout)
+
+  const loadData = async () => {
+    try {
+      setLoadingItems(true)
+      const data = await fetchFiles(folderId, section === 'trash')
+      // Map API files to DriveItem interface
+      const mapped = data.map((f: any) => ({
+        id: f.id, name: f.name, type: f.type, size: Number(f.size),
+        modified: f.updatedAt, starred: f.isStarred, trashed: f.isTrashed,
+        trashedAt: f.trashedAt, parentId: f.parentId, sharedWith: [],
+        shareLink: f.publicLink, owner: f.ownerId,
+        thumbnailUrl: f.type === 'image' ? `/api/files/${f.id}/download` : undefined
+      }))
+      setItems(mapped)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoadingItems(false)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [folderId, section])
+
+  const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [isDragging, setIsDragging] = useState(false)
+  const [uploads, setUploads] = useState<UploadItem[] | null>(null)
+  const [ctx, setCtx] = useState<CtxMenu | null>(null)
+  const [newMenu, setNewMenu] = useState(false)
+
+  // Modals
+  const [previewItem, setPreviewItem] = useState<DriveItem | null>(null)
+  const [shareItem, setShareItem] = useState<DriveItem | null>(null)
+  const [renameItem, setRenameItem] = useState<DriveItem | null>(null)
+  const [moveItem, setMoveItem] = useState<DriveItem | null>(null)
+  const [showNewFolder, setShowNewFolder] = useState(false)
+  const [showEmptyTrash, setShowEmptyTrash] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Computed: visible items
+  const visibleItems = useMemo(() => {
+    let list: DriveItem[] = []
+    if (section === 'shared') return SHARED_WITH_ME
+    if (section === 'trash') return items.filter(i => i.trashed)
+    if (section === 'starred') return items.filter(i => i.starred && !i.trashed)
+    if (section === 'recent') return [...items.filter(i => !i.trashed)].sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime()).slice(0, 15)
+    // myDrive
+    list = items.filter(i => !i.trashed && i.parentId === folderId)
+    return list
+  }, [items, section, folderId])
+
+  const filteredItems = useMemo(() => {
+    if (!search) return visibleItems
+    return items.filter(i => !i.trashed && i.name.toLowerCase().includes(search.toLowerCase()))
+  }, [visibleItems, search, items])
+
+  const recentItems = useMemo(() =>
+    [...items.filter(i => !i.trashed && i.type !== 'folder')].sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime()).slice(0, 6)
+  , [items])
+
+  // Breadcrumb
+  const breadcrumb = useMemo(() => {
+    const crumbs: { id: string | null; name: string }[] = [{ id: null, name: 'My Drive' }]
+    let cur = folderId
+    const trail: DriveItem[] = []
+    while (cur) {
+      const f = items.find(i => i.id === cur)
+      if (!f) break
+      trail.unshift(f)
+      cur = f.parentId
+    }
+    trail.forEach(f => crumbs.push({ id: f.id, name: f.name }))
+    return crumbs
+  }, [folderId, items])
+
+  // Actions
+  const openFolder = (id: string) => {
+    if (folderId) setFolderHistory(h => [...h, folderId])
+    else setFolderHistory(h => [...h, ''])
+    setFolderId(id)
+    setSelected(new Set())
+    setSection('myDrive')
+  }
+  const navigateTo = (id: string | null) => {
+    setFolderId(id)
+    setFolderHistory([])
+    setSelected(new Set())
+  }
+  const navigateSection = (s: NavSection) => {
+    setSection(s)
+    if (s !== 'myDrive') { setFolderId(null); setFolderHistory([]) }
+    setSelected(new Set())
+    setSearch('')
+  }
+  const toggleStar = (id: string) => setItems(i => i.map(x => x.id === id ? { ...x, starred: !x.starred } : x))
+  const trashItem = async (id: string) => {
+    setItems(i => i.map(x => x.id === id ? { ...x, trashed: true, trashedAt: new Date().toISOString() } : x))
+    await trashFile(id).catch(loadData)
+  }
+  const restoreItem = async (id: string) => {
+    setItems(i => i.map(x => x.id === id ? { ...x, trashed: false, trashedAt: undefined } : x))
+    await restoreFile(id).catch(loadData)
+  }
+  const deleteItem = async (id: string) => {
+    setItems(i => i.filter(x => x.id !== id))
+    await deleteFile(id).catch(loadData)
+  }
+  const emptyTrash = async () => {
+    const trashed = items.filter(x => x.trashed)
+    setItems(i => i.filter(x => !x.trashed))
+    for (const f of trashed) {
+      await deleteFile(f.id).catch(console.error)
+    }
+  }
+  const renameItemFn = async (id: string, name: string) => {
+    setItems(i => i.map(x => x.id === id ? { ...x, name } : x))
+    await renameFile(id, name).catch(loadData)
+  }
+  const moveItemFn = async (itemId: string, targetId: string | null) => {
+    setItems(i => i.map(x => x.id === itemId ? { ...x, parentId: targetId, modified: new Date().toISOString() } : x))
+    await moveFile(itemId, targetId).catch(loadData)
+  }
+  const updateItem = (updated: DriveItem) => setItems(i => i.map(x => x.id === updated.id ? updated : x))
+  const createFolder = async (name: string) => {
+    try {
+      const folder = await apiCreateFolder(name, section === 'myDrive' ? folderId : null)
+      loadData() // reload instead of optimistic to get exact ID
+    } catch (e) { console.error(e) }
+  }
+
+  const handleFileInput = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    const fileArray = Array.from(files)
+    
+    // Setup uploads state
+    const uploadItems: UploadItem[] = fileArray.map(f => ({ id: genId(), name: f.name, size: f.size, progress: 0, done: false }))
+    setUploads(uploadItems)
+    
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i]
+      const uf = uploadItems[i]
+      try {
+        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: 30 } : x) : null)
+        await uploadFile(file, folderId)
+        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: 100, done: true } : x) : null)
+        loadData()
+      } catch (err) {
+        console.error('Upload failed:', err)
+        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, done: true } : x) : null)
+      }
+    }
+  }
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    handleFileInput(e.dataTransfer.files)
+  }, [folderId])
+
+  const ctxItem = ctx ? items.find(i => i.id === ctx.itemId) ?? SHARED_WITH_ME.find(i => i.id === ctx.itemId) : null
+
+  const trashCount = items.filter(i => i.trashed).length
+
+  const navItems: { id: NavSection; icon: React.ComponentType<any>; label: string; count?: number }[] = [
+    { id: 'myDrive', icon: Home, label: 'My Drive' },
+    { id: 'recent', icon: Clock, label: 'Recent' },
+    { id: 'starred', icon: Star, label: 'Starred' },
+    { id: 'shared', icon: Users, label: 'Shared with me' },
+    { id: 'trash', icon: Trash2, label: 'Trash', count: trashCount || undefined },
+  ]
+
+  return (
+    <div className="flex h-screen bg-gray-50 font-sans overflow-hidden"
+      onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
+      onDragLeave={() => setIsDragging(false)}
+      onDrop={handleDrop}
+    >
+      {/* Sidebar */}
+      <aside className={`flex-shrink-0 ${sidebarOpen ? 'w-60' : 'w-0 overflow-hidden'} transition-all duration-200 flex flex-col bg-white border-r border-gray-100 h-full`}>
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-50">
+          <img src={ambaliLogo} alt="Ambali Drive logo" className="w-7 h-7 object-contain" />
+          <span className="font-semibold text-gray-900 text-[15px] tracking-tight">Ambali Drive</span>
+        </div>
+
+        {/* New button */}
+        <div className="px-4 pt-4 pb-2">
+          <div className="relative">
+            <button
+              onClick={() => setNewMenu(!newMenu)}
+              className="flex items-center gap-2 w-full px-4 py-2.5 bg-gradient-to-r from-[#1054A0] to-[#2563EB] text-white rounded-xl text-sm font-medium hover:shadow-md hover:shadow-blue-200 transition-all"
+            >
+              <Plus size={16} />
+              New
+              <ChevronDown size={14} className="ml-auto" />
+            </button>
+            {newMenu && (
+              <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-20 fade-in">
+                <button onClick={() => { setShowNewFolder(true); setNewMenu(false) }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                  <FolderPlus size={15} className="text-amber-500" />New folder
+                </button>
+                <div className="h-px bg-gray-100 my-1" />
+                <button onClick={() => { setNewMenu(false); fileInputRef.current?.click() }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                  <Upload size={15} className="text-blue-500" />File upload
+                </button>
+                <button onClick={() => { setNewMenu(false); fileInputRef.current?.click() }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                  <CloudUpload size={15} className="text-blue-500" />Folder upload
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto px-3 pt-1 pb-3 space-y-0.5">
+          {navItems.map(n => {
+            const isActive = section === n.id
+            return (
+              <button
+                key={n.id}
+                onClick={() => navigateSection(n.id)}
+                className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-sm transition-all ${isActive ? 'bg-blue-50 text-[#1054A0] font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+              >
+                <n.icon size={16} className={isActive ? 'text-[#1054A0]' : 'text-gray-400'} strokeWidth={isActive ? 2 : 1.75} />
+                {n.label}
+                {n.count && (
+                  <span className="ml-auto text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">{n.count}</span>
+                )}
+              </button>
+            )
+          })}
+        </nav>
+
+        {/* Storage */}
+        <div className="px-4 py-4 border-t border-gray-50">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-medium text-gray-600">Storage</span>
+            <span className="text-xs text-gray-400">{fmtBytes(USED_BYTES)} of {fmtBytes(QUOTA)}</span>
+          </div>
+          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-3">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${(USED_BYTES / QUOTA) * 100}%`,
+                background: 'linear-gradient(90deg, #1054A0, #3B82F6)'
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+              {ME.initials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-gray-800 truncate">{ME.name}</p>
+              <p className="text-xs text-gray-400 truncate">{ME.email}</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top bar */}
+        <header className="flex items-center gap-3 px-5 py-3 bg-white border-b border-gray-100 flex-shrink-0">
+          <button onClick={() => setSidebarOpen(s => !s)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600">
+            <List size={18} />
+          </button>
+          {/* Search */}
+          <div className="relative flex-1 max-w-xl">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search in Drive…"
+              className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 focus:bg-white transition-all"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-1 ml-auto">
+            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600" title="Notifications">
+              <Bell size={17} />
+            </button>
+            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600" title="Settings">
+              <Settings size={17} />
+            </button>
+            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600" title="Help">
+              <HelpCircle size={17} />
+            </button>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto"
+          onClick={() => { setSelected(new Set()); setCtx(null); setNewMenu(false) }}
+        >
+          <div className="px-6 pt-5 pb-8">
+            {/* Breadcrumb + actions */}
+            <div className="flex items-center gap-3 mb-5 flex-wrap">
+              <div className="flex items-center gap-1 flex-1 min-w-0">
+                {search ? (
+                  <span className="text-base font-semibold text-gray-900">Search results for "{search}"</span>
+                ) : section === 'myDrive' ? (
+                  <div className="flex items-center gap-1">
+                    {breadcrumb.map((c, i) => (
+                      <div key={i} className="flex items-center gap-1">
+                        {i > 0 && <ChevronRight size={14} className="text-gray-300" />}
+                        <button
+                          onClick={e => { e.stopPropagation(); navigateTo(c.id) }}
+                          className={`text-sm font-medium rounded-lg px-2 py-1 transition-colors ${i === breadcrumb.length - 1 ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                        >
+                          {c.name}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-base font-semibold text-gray-900">
+                    {navItems.find(n => n.id === section)?.label}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {section === 'trash' && trashCount > 0 && (
+                  <button onClick={e => { e.stopPropagation(); setShowEmptyTrash(true) }} className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-colors">
+                    <Trash2 size={14} />Empty trash
+                  </button>
+                )}
+                {section !== 'trash' && section !== 'shared' && !search && (
+                  <button
+                    onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm text-[#1054A0] border border-blue-200 rounded-xl hover:bg-blue-50 transition-colors"
+                  >
+                    <Upload size={14} />Upload
+                  </button>
+                )}
+                <div className="flex items-center bg-gray-100 rounded-xl p-1 gap-0.5">
+                  <button onClick={e => { e.stopPropagation(); setViewMode('grid') }} className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>
+                    <LayoutGrid size={15} />
+                  </button>
+                  <button onClick={e => { e.stopPropagation(); setViewMode('list') }} className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-gray-700' : 'text-gray-400 hover:text-gray-600'}`}>
+                    <List size={15} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Access (only on root myDrive, no search) */}
+            {section === 'myDrive' && !folderId && !search && (
+              <div className="mb-7">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Recent files</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {recentItems.map(item => (
+                    <button
+                      key={item.id}
+                      onClick={e => { e.stopPropagation(); setPreviewItem(item) }}
+                      className="group flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-100 transition-all text-center"
+                    >
+                      {item.type === 'image' && item.thumbnailUrl ? (
+                        <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100">
+                          <img src={item.thumbnailUrl} alt={item.name} className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="w-full aspect-square rounded-lg flex items-center justify-center" style={{ background: COLORS[item.type] + '18' }}>
+                          <FIcon type={item.type} size={24} />
+                        </div>
+                      )}
+                      <span className="text-xs text-gray-600 truncate w-full">{item.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Drag drop overlay hint */}
+            {isDragging && (
+              <div className="fixed inset-0 z-40 flex items-center justify-center bg-blue-600/10 border-2 border-dashed border-blue-400 pointer-events-none">
+                <div className="flex flex-col items-center gap-3 text-blue-700">
+                  <CloudUpload size={48} strokeWidth={1.5} />
+                  <p className="text-lg font-semibold">Drop files to upload</p>
+                </div>
+              </div>
+            )}
+
+            {/* File list label */}
+            {section === 'myDrive' && !search && (
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                {folderId ? (items.find(i => i.id === folderId)?.name ?? '') : 'All files'}
+              </h3>
+            )}
+
+            {/* Files */}
+            {filteredItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+                {section === 'trash' ? <Trash2 size={40} strokeWidth={1} className="mb-3" /> :
+                  section === 'starred' ? <Star size={40} strokeWidth={1} className="mb-3" /> :
+                  search ? <Search size={40} strokeWidth={1} className="mb-3" /> :
+                  <Folder size={40} strokeWidth={1} className="mb-3" />}
+                <p className="font-medium text-gray-500 mb-1">
+                  {section === 'trash' ? 'Trash is empty' :
+                    section === 'starred' ? 'No starred files' :
+                    search ? 'No results found' : 'This folder is empty'}
+                </p>
+                <p className="text-sm text-gray-400">
+                  {section === 'trash' ? 'Files you delete will appear here' :
+                    section === 'starred' ? 'Star files to find them quickly' :
+                    search ? `Try a different search term` : 'Upload files or create a folder to get started'}
+                </p>
+                {!search && section !== 'trash' && section !== 'starred' && section !== 'shared' && (
+                  <button
+                    onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }}
+                    className="mt-5 flex items-center gap-2 px-5 py-2.5 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0D4A8A] transition-colors"
+                  >
+                    <Upload size={15} /> Upload files
+                  </button>
+                )}
+              </div>
+            ) : viewMode === 'grid' ? (
+              <FileGrid
+                items={filteredItems} allItems={items} selected={selected} section={section}
+                onSelect={setSelected} onOpen={(item) => {
+                  if (item.type === 'folder') openFolder(item.id)
+                  else setPreviewItem(item)
+                }}
+                onCtx={(e, id) => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, itemId: id }) }}
+                onStar={toggleStar} onShare={setShareItem} onTrash={trashItem}
+              />
+            ) : (
+              <FileList
+                items={filteredItems} allItems={items} selected={selected} section={section}
+                onSelect={setSelected} onOpen={(item) => {
+                  if (item.type === 'folder') openFolder(item.id)
+                  else setPreviewItem(item)
+                }}
+                onCtx={(e, id) => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, itemId: id }) }}
+                onStar={toggleStar} onShare={setShareItem} onTrash={trashItem}
+              />
+            )}
+          </div>
+        </main>
+      </div>
+
+      {/* Hidden file input */}
+      <input ref={fileInputRef} type="file" multiple className="hidden" onChange={e => handleFileInput(e.target.files)} />
+
+      {/* Context Menu */}
+      {ctx && ctxItem && (
+        <ContextMenu
+          ctx={ctx} item={ctxItem} section={section} onClose={() => setCtx(null)}
+          onPreview={() => setPreviewItem(ctxItem)}
+          onStar={() => toggleStar(ctxItem.id)}
+          onShare={() => setShareItem(ctxItem)}
+          onRename={() => setRenameItem(ctxItem)}
+          onMove={() => setMoveItem(ctxItem)}
+          onTrash={() => trashItem(ctxItem.id)}
+          onRestore={() => restoreItem(ctxItem.id)}
+          onDelete={() => deleteItem(ctxItem.id)}
+        />
+      )}
+
+      {/* Modals */}
+      {previewItem && (
+        <PreviewModal
+          item={previewItem}
+          siblings={items.filter(i => i.parentId === previewItem.parentId && !i.trashed)}
+          onClose={() => setPreviewItem(null)}
+        />
+      )}
+      {shareItem && (
+        <ShareModal item={shareItem} onClose={() => setShareItem(null)} onUpdate={updateItem} />
+      )}
+      {renameItem && (
+        <RenameModal item={renameItem} onClose={() => setRenameItem(null)} onRename={renameItemFn} />
+      )}
+      {moveItem && (
+        <MoveModal item={moveItem} allItems={items} onClose={() => setMoveItem(null)} onMove={moveItemFn} />
+      )}
+      {showNewFolder && (
+        <NewFolderModal onClose={() => setShowNewFolder(false)} onCreate={createFolder} />
+      )}
+      {showEmptyTrash && (
+        <EmptyTrashModal count={trashCount} onClose={() => setShowEmptyTrash(false)} onConfirm={emptyTrash} />
+      )}
+
+      {/* Upload toast */}
+      {uploads && (
+        <UploadToast files={uploads} onDone={() => setUploads(null)} />
+      )}
+    </div>
+  )
+}
+
+// ─── File Grid ────────────────────────────────────────────────────────────────
+function FileGrid({ items, allItems, selected, section, onSelect, onOpen, onCtx, onStar, onShare, onTrash }: {
+  items: DriveItem[]; allItems: DriveItem[]; selected: Set<string>; section: NavSection
+  onSelect: (s: Set<string>) => void; onOpen: (item: DriveItem) => void
+  onCtx: (e: React.MouseEvent, id: string) => void; onStar: (id: string) => void
+  onShare: (item: DriveItem) => void; onTrash: (id: string) => void
+}) {
+  const folders = items.filter(i => i.type === 'folder')
+  const files = items.filter(i => i.type !== 'folder')
+
+  const ItemCard = ({ item }: { item: DriveItem }) => {
+    const isSelected = selected.has(item.id)
+    const isImg = item.type === 'image' && item.thumbnailUrl
+    return (
+      <div
+        onContextMenu={e => onCtx(e, item.id)}
+        onClick={e => { e.stopPropagation(); onSelect(new Set([item.id])) }}
+        onDoubleClick={e => { e.stopPropagation(); onOpen(item) }}
+        className={`group relative rounded-2xl border cursor-pointer transition-all select-none ${isSelected ? 'border-blue-300 bg-blue-50 shadow-sm' : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'}`}
+      >
+        {/* Thumbnail or icon area */}
+        <div className={`rounded-t-2xl overflow-hidden flex items-center justify-center ${isImg ? 'h-36' : 'h-28 bg-gray-50/60'}`} style={!isImg ? { background: COLORS[item.type] + '0d' } : {}}>
+          {isImg ? (
+            <img src={item.thumbnailUrl} alt={item.name} className="w-full h-full object-cover" />
+          ) : item.type === 'folder' ? (
+            <Folder size={40} color={COLORS.folder} strokeWidth={1.5} />
+          ) : (
+            <FIcon type={item.type} size={36} />
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="px-3 pt-2 pb-3">
+          <p className="text-sm font-medium text-gray-800 truncate leading-tight">{item.name}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            {item.starred && <Star size={10} fill="#F59E0B" color="#F59E0B" />}
+            {item.shareLink && <Globe size={10} className="text-blue-400" />}
+            {item.sharedWith.length > 0 && <Users size={10} className="text-gray-400" />}
+            <span className="text-xs text-gray-400">{fmtDate(item.modified)}</span>
+          </div>
+        </div>
+
+        {/* Hover actions */}
+        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {section !== 'trash' && (
+            <>
+              <button onClick={e => { e.stopPropagation(); onStar(item.id) }} className={`p-1.5 rounded-lg backdrop-blur-sm transition-colors ${item.starred ? 'bg-amber-50/90 text-amber-500' : 'bg-white/90 text-gray-400 hover:text-amber-500'}`}>
+                <Star size={12} fill={item.starred ? '#F59E0B' : 'none'} />
+              </button>
+              <button onClick={e => { e.stopPropagation(); onShare(item) }} className="p-1.5 rounded-lg bg-white/90 text-gray-400 hover:text-blue-500 backdrop-blur-sm transition-colors">
+                <Share2 size={12} />
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Selected check */}
+        {isSelected && (
+          <div className="absolute top-2 left-2 w-5 h-5 bg-[#1054A0] rounded-full flex items-center justify-center">
+            <Check size={11} color="white" strokeWidth={3} />
+          </div>
+        )}
+
+        {/* Shared avatars */}
+        {item.sharedWith.length > 0 && (
+          <div className="absolute bottom-9 left-3 flex -space-x-1.5">
+            {item.sharedWith.slice(0, 3).map(u => (
+              <div key={u.id} style={{ background: u.color, width: 18, height: 18, fontSize: 8 }} className="rounded-full border border-white flex items-center justify-center text-white font-semibold">
+                {u.initials[0]}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="fade-in">
+      {folders.length > 0 && (
+        <div className="mb-5">
+          {files.length > 0 && <h4 className="text-xs font-medium text-gray-400 mb-2.5 uppercase tracking-wide">Folders</h4>}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {folders.map(item => <ItemCard key={item.id} item={item} />)}
+          </div>
+        </div>
+      )}
+      {files.length > 0 && (
+        <div>
+          {folders.length > 0 && <h4 className="text-xs font-medium text-gray-400 mb-2.5 uppercase tracking-wide">Files</h4>}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {files.map(item => <ItemCard key={item.id} item={item} />)}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── File List ────────────────────────────────────────────────────────────────
+function FileList({ items, allItems, selected, section, onSelect, onOpen, onCtx, onStar, onShare, onTrash }: {
+  items: DriveItem[]; allItems: DriveItem[]; selected: Set<string>; section: NavSection
+  onSelect: (s: Set<string>) => void; onOpen: (item: DriveItem) => void
+  onCtx: (e: React.MouseEvent, id: string) => void; onStar: (id: string) => void
+  onShare: (item: DriveItem) => void; onTrash: (id: string) => void
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden fade-in">
+      {/* Header */}
+      <div className="grid grid-cols-[minmax(0,1fr)_120px_120px_80px] gap-3 px-4 py-2.5 border-b border-gray-50 bg-gray-50/50">
+        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Name</span>
+        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Owner</span>
+        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Modified</span>
+        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide text-right">Size</span>
+      </div>
+      {items.map((item, i) => {
+        const isSelected = selected.has(item.id)
+        const ownerName = OWNER_NAMES[item.owner] ?? 'Unknown'
+        return (
+          <div
+            key={item.id}
+            onContextMenu={e => onCtx(e, item.id)}
+            onClick={e => { e.stopPropagation(); onSelect(new Set([item.id])) }}
+            onDoubleClick={e => { e.stopPropagation(); onOpen(item) }}
+            className={`group grid grid-cols-[minmax(0,1fr)_120px_120px_80px] gap-3 px-4 py-2.5 items-center cursor-pointer transition-colors select-none ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'} ${i < items.length - 1 ? 'border-b border-gray-50' : ''}`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex-shrink-0">
+                {item.type === 'image' && item.thumbnailUrl ? (
+                  <img src={item.thumbnailUrl} alt="" className="w-7 h-7 rounded object-cover" />
+                ) : (
+                  <FIcon type={item.type} size={18} />
+                )}
+              </div>
+              <span className="text-sm text-gray-800 truncate font-medium">{item.name}</span>
+              {item.starred && <Star size={11} fill="#F59E0B" color="#F59E0B" className="flex-shrink-0" />}
+              {item.sharedWith.length > 0 && <Users size={11} className="flex-shrink-0 text-gray-400" />}
+              {item.shareLink && <Globe size={11} className="flex-shrink-0 text-blue-400" />}
+              {/* Row actions */}
+              {section !== 'trash' && (
+                <div className="flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                  <button onClick={e => { e.stopPropagation(); onStar(item.id) }} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-amber-500 transition-colors">
+                    <Star size={13} fill={item.starred ? '#F59E0B' : 'none'} color={item.starred ? '#F59E0B' : undefined} />
+                  </button>
+                  <button onClick={e => { e.stopPropagation(); onShare(item) }} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-blue-500 transition-colors">
+                    <Share2 size={13} />
+                  </button>
+                  <button onClick={e => { e.stopPropagation(); onTrash(item.id) }} className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <span className="text-xs text-gray-500 truncate">{ownerName === ME.name ? 'me' : ownerName}</span>
+            <span className="text-xs text-gray-500">{fmtDate(item.modified)}</span>
+            <span className="text-xs text-gray-500 text-right">{item.type === 'folder' ? '—' : fmtBytes(item.size)}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
