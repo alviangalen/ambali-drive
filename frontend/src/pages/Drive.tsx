@@ -10,6 +10,8 @@ import {
   SkipForward, CheckCircle2
 } from 'lucide-react'
 import ambaliLogo from '@/imports/ambalilogocrop-removebg-preview.png'
+import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, createShareLink } from '../lib/api'
+import { useAuthStore } from '../store/authStore'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type FileType = 'folder' | 'image' | 'video' | 'audio' | 'pdf' | 'doc' | 'spreadsheet' | 'archive' | 'other'
@@ -26,58 +28,6 @@ interface DriveItem {
 interface UploadItem { id: string; name: string; size: number; progress: number; done: boolean }
 interface CtxMenu { x: number; y: number; itemId: string }
 
-// ─── Mock Users ──────────────────────────────────────────────────────────────
-const ME = { id: 'u1', name: 'Aditya Pratama', email: 'aditya@ambali.io', initials: 'AP' }
-const QUOTA = 15 * 1024 ** 3
-const USED_BYTES = 9.31 * 1024 ** 3
-
-const SU: SharedUser[] = [
-  { id: 'u2', name: 'Sinta Dewi', email: 'sinta@ambali.io', initials: 'SD', color: '#7C3AED', role: 'editor' },
-  { id: 'u3', name: 'Raka Nugraha', email: 'raka@ambali.io', initials: 'RN', color: '#059669', role: 'viewer' },
-  { id: 'u4', name: 'Maya Putri', email: 'maya@ambali.io', initials: 'MP', color: '#DC2626', role: 'viewer' },
-]
-
-// ─── Mock Data ───────────────────────────────────────────────────────────────
-const INIT: DriveItem[] = [
-  { id: 'f-docs', name: 'Documents', type: 'folder', size: 856*1024*1024, modified: '2024-11-28T09:00:00Z', starred: false, trashed: false, parentId: null, sharedWith: [SU[0]], shareLink: null, owner: 'u1' },
-  { id: 'f-imgs', name: 'Images', type: 'folder', size: 2340*1024*1024, modified: '2024-11-27T14:30:00Z', starred: true, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
-  { id: 'f-vids', name: 'Videos', type: 'folder', size: 4120*1024*1024, modified: '2024-11-25T11:00:00Z', starred: false, trashed: false, parentId: null, sharedWith: [SU[1], SU[2]], shareLink: null, owner: 'u1' },
-  { id: 'f-design', name: 'Design Assets', type: 'folder', size: 1420*1024*1024, modified: '2024-11-20T16:45:00Z', starred: false, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
-  { id: 'f-proj', name: 'Projects', type: 'folder', size: 320*1024*1024, modified: '2024-11-15T10:00:00Z', starred: false, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
-  { id: 'file-ar', name: 'Annual Report 2024.pdf', type: 'pdf', size: 4.2*1024*1024, modified: '2024-11-29T08:00:00Z', starred: true, trashed: false, parentId: null, sharedWith: [SU[0]], shareLink: { url: 'https://drive.ambali.io/s/ar2024-xk92j', password: null, expiresAt: null, allowDownload: true }, owner: 'u1' },
-  { id: 'file-budget', name: 'Budget Overview Q4.xlsx', type: 'spreadsheet', size: 156*1024, modified: '2024-11-28T15:30:00Z', starred: false, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
-  { id: 'file-readme', name: 'README.md', type: 'doc', size: 12*1024, modified: '2024-11-22T09:00:00Z', starred: false, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
-  // Documents
-  { id: 'file-q4', name: 'Q4 Financial Report.pdf', type: 'pdf', size: 1.2*1024*1024, modified: '2024-11-26T10:00:00Z', starred: true, trashed: false, parentId: 'f-docs', sharedWith: [SU[0], SU[1]], shareLink: null, owner: 'u1' },
-  { id: 'file-proposal', name: 'Project Proposal.docx', type: 'doc', size: 245*1024, modified: '2024-11-24T14:00:00Z', starred: false, trashed: false, parentId: 'f-docs', sharedWith: [], shareLink: null, owner: 'u1' },
-  { id: 'file-notes', name: 'Meeting Notes Nov 2024.docx', type: 'doc', size: 89*1024, modified: '2024-11-23T16:00:00Z', starred: false, trashed: false, parentId: 'f-docs', sharedWith: [], shareLink: null, owner: 'u1' },
-  { id: 'file-contract', name: 'Service Agreement.pdf', type: 'pdf', size: 890*1024, modified: '2024-11-18T09:30:00Z', starred: false, trashed: false, parentId: 'f-docs', sharedWith: [SU[2]], shareLink: null, owner: 'u1' },
-  // Images
-  { id: 'file-beach', name: 'Bali Beach Sunset.jpg', type: 'image', size: 3.4*1024*1024, modified: '2024-11-20T18:00:00Z', starred: false, trashed: false, parentId: 'f-imgs', sharedWith: [], shareLink: null, owner: 'u1', thumbnailUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=280&fit=crop&auto=format' },
-  { id: 'file-team', name: 'Team Photo 2024.jpg', type: 'image', size: 2.8*1024*1024, modified: '2024-11-15T12:00:00Z', starred: false, trashed: false, parentId: 'f-imgs', sharedWith: [], shareLink: null, owner: 'u1', thumbnailUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&h=280&fit=crop&auto=format' },
-  { id: 'file-product', name: 'Product Launch Event.jpg', type: 'image', size: 5.1*1024*1024, modified: '2024-11-10T09:00:00Z', starred: false, trashed: false, parentId: 'f-imgs', sharedWith: [], shareLink: null, owner: 'u1', thumbnailUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=280&fit=crop&auto=format' },
-  { id: 'file-office', name: 'Office Interior.jpg', type: 'image', size: 4.2*1024*1024, modified: '2024-10-28T11:30:00Z', starred: false, trashed: false, parentId: 'f-imgs', sharedWith: [], shareLink: null, owner: 'u1', thumbnailUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=280&fit=crop&auto=format' },
-  // Videos
-  { id: 'file-demo', name: 'Product Demo v2.mp4', type: 'video', size: 45.2*1024*1024, modified: '2024-11-28T11:00:00Z', starred: true, trashed: false, parentId: 'f-vids', sharedWith: [SU[0]], shareLink: null, owner: 'u1' },
-  { id: 'file-tutorial', name: 'Onboarding Tutorial.mp4', type: 'video', size: 89.4*1024*1024, modified: '2024-11-22T15:00:00Z', starred: false, trashed: false, parentId: 'f-vids', sharedWith: [], shareLink: null, owner: 'u1' },
-  { id: 'file-podcast', name: 'Company Podcast Ep 12.mp3', type: 'audio', size: 28.6*1024*1024, modified: '2024-11-19T10:00:00Z', starred: false, trashed: false, parentId: 'f-vids', sharedWith: [], shareLink: null, owner: 'u1' },
-  // Design
-  { id: 'file-logos', name: 'Brand Logos Package.zip', type: 'archive', size: 12.3*1024*1024, modified: '2024-11-21T13:00:00Z', starred: false, trashed: false, parentId: 'f-design', sharedWith: [], shareLink: null, owner: 'u1' },
-  { id: 'file-figma', name: 'App Mockups v3.fig', type: 'other', size: 8.9*1024*1024, modified: '2024-11-19T16:30:00Z', starred: false, trashed: false, parentId: 'f-design', sharedWith: [SU[0]], shareLink: null, owner: 'u1' },
-  { id: 'file-icons', name: 'Icon Set.zip', type: 'archive', size: 4.2*1024*1024, modified: '2024-11-14T09:00:00Z', starred: false, trashed: false, parentId: 'f-design', sharedWith: [], shareLink: null, owner: 'u1' },
-  // Trash
-  { id: 'trash-1', name: 'Old Draft v1.docx', type: 'doc', size: 45*1024, modified: '2024-11-10T12:00:00Z', starred: false, trashed: true, trashedAt: '2024-11-25T10:00:00Z', parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
-  { id: 'trash-2', name: 'Archive 2023', type: 'folder', size: 234*1024*1024, modified: '2023-12-31T23:59:00Z', starred: false, trashed: true, trashedAt: '2024-11-20T09:00:00Z', parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
-  { id: 'trash-3', name: 'temp_backup.zip', type: 'archive', size: 512*1024*1024, modified: '2024-11-01T08:00:00Z', starred: false, trashed: true, trashedAt: '2024-11-18T14:00:00Z', parentId: null, sharedWith: [], shareLink: null, owner: 'u1' },
-]
-
-const SHARED_WITH_ME: DriveItem[] = [
-  { id: 'shared-1', name: 'Q3 Sales Report.xlsx', type: 'spreadsheet', size: 2.1*1024*1024, modified: '2024-11-27T09:00:00Z', starred: false, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u2' },
-  { id: 'shared-2', name: 'Marketing Campaign Assets', type: 'folder', size: 890*1024*1024, modified: '2024-11-26T14:00:00Z', starred: false, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u3' },
-  { id: 'shared-3', name: 'Brand Guidelines 2024.pdf', type: 'pdf', size: 8.4*1024*1024, modified: '2024-11-20T10:00:00Z', starred: false, trashed: false, parentId: null, sharedWith: [], shareLink: null, owner: 'u4' },
-]
-
-const OWNER_NAMES: Record<string, string> = { u1: ME.name, u2: SU[0].name, u3: SU[1].name, u4: SU[2].name }
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
 function fmtBytes(b: number) {
@@ -378,10 +328,10 @@ function ShareModal({ item, onClose, onUpdate }: { item: DriveItem; onClose: () 
             <div className="space-y-1">
               {/* Owner */}
               <div className="flex items-center gap-3 py-2 px-3 rounded-xl bg-gray-50/50">
-                <Avatar initials={ME.initials} color="#1054A0" size={32} />
+                <Avatar initials={(user?.name?.substring(0,2).toUpperCase() || 'U')} color="#1054A0" size={32} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{ME.name} <span className="text-gray-400 font-normal">(you)</span></p>
-                  <p className="text-xs text-gray-400 truncate">{ME.email}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{(user?.name || 'User')} <span className="text-gray-400 font-normal">(you)</span></p>
+                  <p className="text-xs text-gray-400 truncate">{(user?.email || '')}</p>
                 </div>
                 <span className="text-xs text-gray-400 font-medium px-2 py-1 bg-gray-200 rounded-lg">Owner</span>
               </div>
@@ -728,8 +678,6 @@ function ContextMenu({
 }
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
-import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, createShareLink } from '../lib/api'
-import { useAuthStore } from '../store/authStore'
 
 export default function Drive() {
   const [items, setItems] = useState<DriveItem[]>([])
@@ -739,6 +687,7 @@ export default function Drive() {
   const [folderHistory, setFolderHistory] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const logout = useAuthStore(s => s.logout)
+  const user = useAuthStore(s => s.user)
 
   const loadData = async () => {
     try {
@@ -785,7 +734,7 @@ export default function Drive() {
   // Computed: visible items
   const visibleItems = useMemo(() => {
     let list: DriveItem[] = []
-    if (section === 'shared') return SHARED_WITH_ME
+    if (section === 'shared') return []
     if (section === 'trash') return items.filter(i => i.trashed)
     if (section === 'starred') return items.filter(i => i.starred && !i.trashed)
     if (section === 'recent') return [...items.filter(i => !i.trashed)].sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime()).slice(0, 15)
@@ -902,7 +851,7 @@ export default function Drive() {
     handleFileInput(e.dataTransfer.files)
   }, [folderId])
 
-  const ctxItem = ctx ? items.find(i => i.id === ctx.itemId) ?? SHARED_WITH_ME.find(i => i.id === ctx.itemId) : null
+  const ctxItem = ctx ? items.find(i => i.id === ctx.itemId) ?? [].find(i => i.id === ctx.itemId) : null
 
   const trashCount = items.filter(i => i.trashed).length
 
@@ -993,11 +942,11 @@ export default function Drive() {
           </div>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
-              {ME.initials}
+              {(user?.name?.substring(0,2).toUpperCase() || 'U')}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-800 truncate">{ME.name}</p>
-              <p className="text-xs text-gray-400 truncate">{ME.email}</p>
+              <p className="text-xs font-medium text-gray-800 truncate">{(user?.name || 'User')}</p>
+              <p className="text-xs text-gray-400 truncate">{(user?.email || '')}</p>
             </div>
           </div>
         </div>
@@ -1356,7 +1305,7 @@ function FileList({ items, allItems, selected, section, onSelect, onOpen, onCtx,
       </div>
       {items.map((item, i) => {
         const isSelected = selected.has(item.id)
-        const ownerName = OWNER_NAMES[item.owner] ?? 'Unknown'
+        const ownerName = item.owner === user?.id ? user?.name : 'Unknown'
         return (
           <div
             key={item.id}
@@ -1392,7 +1341,7 @@ function FileList({ items, allItems, selected, section, onSelect, onOpen, onCtx,
                 </div>
               )}
             </div>
-            <span className="text-xs text-gray-500 truncate">{ownerName === ME.name ? 'me' : ownerName}</span>
+            <span className="text-xs text-gray-500 truncate">{ownerName === (user?.name || 'User') ? 'me' : ownerName}</span>
             <span className="text-xs text-gray-500">{fmtDate(item.modified)}</span>
             <span className="text-xs text-gray-500 text-right">{item.type === 'folder' ? '—' : fmtBytes(item.size)}</span>
           </div>
