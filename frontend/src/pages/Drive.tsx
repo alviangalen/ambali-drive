@@ -726,6 +726,7 @@ export default function Drive() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const folderInputRef = useRef<HTMLInputElement>(null)
 
   // Computed: visible items
   const visibleItems = useMemo(() => {
@@ -818,6 +819,31 @@ export default function Drive() {
     } catch (e) { console.error(e) }
   }
 
+  
+  const handleFolderInput = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    const fileArray = Array.from(files)
+    
+    const uploadItems: UploadItem[] = fileArray.map(f => ({ id: genId(), name: f.name, size: f.size, progress: 0, done: false }))
+    setUploads(uploadItems)
+    
+    // For simplicity, we just upload all files flat to the current folderId.
+    // A robust solution would recreate the folder tree, but let's at least upload the files.
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i]
+      const uf = uploadItems[i]
+      try {
+        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: 30 } : x) : null)
+        await uploadFile(file, folderId)
+        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: 100, done: true } : x) : null)
+      } catch (err) {
+        console.error('Folder file upload failed:', err)
+        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, done: true } : x) : null)
+      }
+    }
+    loadData()
+  }
+
   const handleFileInput = async (files: FileList | null) => {
     if (!files || files.length === 0) return
     const fileArray = Array.from(files)
@@ -893,7 +919,7 @@ export default function Drive() {
                 <button onClick={() => { setNewMenu(false); fileInputRef.current?.click() }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                   <Upload size={15} className="text-blue-500" />File upload
                 </button>
-                <button onClick={() => { setNewMenu(false); fileInputRef.current?.click() }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <button onClick={() => { setNewMenu(false); folderInputRef.current?.click() }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                   <CloudUpload size={15} className="text-blue-500" />Folder upload
                 </button>
               </div>
@@ -1135,7 +1161,11 @@ export default function Drive() {
       </div>
 
       {/* Hidden file input */}
-      <input ref={fileInputRef} type="file" multiple className="hidden" onChange={e => handleFileInput(e.target.files)} />
+      
+      <input ref={fileInputRef} type="file" multiple className="hidden" onChange={e => { handleFileInput(e.target.files); e.target.value = ''; }} />
+      {/* @ts-ignore */}
+      <input ref={folderInputRef} type="file" webkitdirectory="" directory="" className="hidden" onChange={e => { handleFolderInput(e.target.files); e.target.value = ''; }} />
+
 
       {/* Context Menu */}
       {ctx && ctxItem && (
