@@ -15,6 +15,10 @@ RUN pnpm install --no-frozen-lockfile
 # 3. Build step — compile frontend and backend, generate Prisma client
 FROM base AS build
 WORKDIR /app
+# Provide a dummy DATABASE_URL so prisma generate can run during build
+# (the real URL is injected at runtime via docker-compose environment)
+ARG DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
+ENV DATABASE_URL=${DATABASE_URL}
 # Copy full node_modules from pnpm workspace (includes root .pnpm virtual store)
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=dependencies /app/frontend/node_modules ./frontend/node_modules
@@ -35,6 +39,7 @@ RUN npm install -g pm2
 COPY --from=build /app/backend/dist ./backend/dist
 COPY backend/package.json ./backend/package.json
 COPY backend/prisma ./backend/prisma
+COPY backend/prisma.config.ts ./backend/prisma.config.ts
 
 # Copy the entire backend node_modules (includes @prisma/client with generated code)
 COPY --from=build /app/backend/node_modules ./backend/node_modules

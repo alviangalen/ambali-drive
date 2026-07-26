@@ -1,9 +1,4 @@
 import { defineConfig } from '@prisma/config';
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
-dotenv.config(); // fallback
 
 export default defineConfig({
   earlyAccess: true,
@@ -11,6 +6,8 @@ export default defineConfig({
     port: 5555,
   },
   migrations: {
-    url: process.env.DATABASE_URL
-  }
+    // In Docker, DATABASE_URL is injected directly as an env var.
+    // In dev, it's read from ../.env via the shell or dotenv in server.ts.
+    url: process.env.DATABASE_URL,
+  },
 });
