@@ -10,6 +10,7 @@ WORKDIR /app
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY frontend/package.json ./frontend/
 COPY backend/package.json ./backend/
+RUN pnpm config set ignore-scripts false
 RUN pnpm install --no-frozen-lockfile
 
 # 3. Build step
@@ -39,6 +40,7 @@ COPY backend/package.json ./backend/
 COPY backend/prisma ./backend/prisma
 
 # Install production dependencies only
+RUN pnpm config set ignore-scripts false
 RUN pnpm install --prod --no-frozen-lockfile
 # Generate prisma client for production
 RUN cd backend && pnpm exec prisma generate
