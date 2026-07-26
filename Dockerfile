@@ -52,6 +52,9 @@ COPY --from=build /app/frontend/dist ./frontend/dist
 
 ENV NODE_ENV=production
 ENV PORT=9000
+# Default DATABASE_URL pointing to the 'db' Docker service.
+# This is overridden at runtime by the docker-compose environment block.
+ENV DATABASE_URL=postgresql://ambali_user:PasswordSangatKuat123!@db:5432/ambalidrive
 EXPOSE 9000
 
 # Run prisma migrate then start the server via pm2
