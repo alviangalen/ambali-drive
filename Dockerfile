@@ -7,7 +7,7 @@ RUN npm install -g pnpm
 FROM base AS dependencies
 WORKDIR /app
 # Copy workspace configuration and package.json files
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc* ./
 COPY frontend/package.json ./frontend/
 COPY backend/package.json ./backend/
 RUN pnpm config set ignore-scripts false
@@ -34,7 +34,7 @@ WORKDIR /app
 # or just copy the pruned node_modules. For simplicity, we will copy the built files.
 RUN npm install -g pnpm pm2
 
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc* ./
 COPY frontend/package.json ./frontend/
 COPY backend/package.json ./backend/
 COPY backend/prisma ./backend/prisma
