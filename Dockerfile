@@ -50,6 +50,10 @@ COPY --from=build /app/node_modules ./node_modules
 # Copy built frontend to be served as static files
 COPY --from=build /app/frontend/dist ./frontend/dist
 
+# Copy startup script
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 ENV NODE_ENV=production
 ENV PORT=9000
 # Default DATABASE_URL pointing to the 'db' Docker service.
@@ -57,5 +61,4 @@ ENV PORT=9000
 ENV DATABASE_URL=postgresql://ambali_user:PasswordSangatKuat123!@db:5432/ambalidrive
 EXPOSE 9000
 
-# Run prisma migrate then start the server via pm2
-CMD ["sh", "-c", "cd backend && node_modules/.bin/prisma migrate deploy && pm2-runtime start dist/server.js"]
+CMD ["/app/start.sh"]
