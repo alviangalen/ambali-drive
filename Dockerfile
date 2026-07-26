@@ -1,18 +1,19 @@
-# 1. Base image for shared dependencies
+# 1. Base image
 FROM node:22-alpine AS base
 WORKDIR /app
-RUN npm install -g pnpm
+# Pin pnpm to v8 to avoid strict-dep-builds issues in CI/Docker
+RUN npm install -g pnpm@8
 
-# 2. Dependencies
+# 2. Install ALL dependencies (dev + prod) for the build
 FROM base AS dependencies
 WORKDIR /app
-# Copy workspace configuration and package.json files
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc* ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY frontend/package.json ./frontend/
 COPY backend/package.json ./backend/
+# pnpm v8 does not have strict-dep-builds enforcement
 RUN pnpm install --no-frozen-lockfile
 
-# 3. Build step
+# 3. Build step — compile frontend and backend
 FROM base AS build
 WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules
@@ -20,36 +21,26 @@ COPY --from=dependencies /app/frontend/node_modules ./frontend/node_modules
 COPY --from=dependencies /app/backend/node_modules ./backend/node_modules
 COPY . .
 # Generate Prisma Client
-RUN cd backend && pnpm exec prisma generate
-# Build frontend and backend
+RUN cd backend && node_modules/.bin/prisma generate
+# Build frontend (Vite) and backend (tsc) concurrently
 RUN pnpm -r run build
 
-# 4. Production image
+# 4. Lean production image
 FROM node:22-alpine AS runner
 WORKDIR /app
 
-# We only need production dependencies in the final image, but since we are using
-# pnpm workspaces, it's simpler to copy the built artifacts and re-install prod only,
-# or just copy the pruned node_modules. For simplicity, we will copy the built files.
-RUN npm install -g pnpm pm2
+RUN npm install -g pm2
 
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc* ./
-COPY frontend/package.json ./frontend/
-COPY backend/package.json ./backend/
-COPY backend/prisma ./backend/prisma
-
-# Install production dependencies only
-RUN pnpm install --prod --no-frozen-lockfile
-# Generate prisma client for production
-RUN cd backend && pnpm exec prisma generate
-
-# Copy built code
+# Copy only what's needed at runtime
 COPY --from=build /app/backend/dist ./backend/dist
 COPY --from=build /app/frontend/dist ./frontend/dist
+COPY --from=dependencies /app/backend/node_modules ./backend/node_modules
+COPY backend/package.json ./backend/package.json
+COPY backend/prisma ./backend/prisma
 
 ENV NODE_ENV=production
 ENV PORT=9000
 EXPOSE 9000
 
-# Run prisma migrate deploy before starting the server
-CMD ["sh", "-c", "cd backend && pnpm exec prisma migrate deploy && pm2-runtime start dist/server.js"]
+# Run prisma migrate then start the server
+CMD ["sh", "-c", "cd backend && node_modules/.bin/prisma migrate deploy && pm2-runtime start dist/server.js"]
