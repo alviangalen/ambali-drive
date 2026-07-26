@@ -1,13 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import {
-  Folder, FileText, FileImage, FileVideo, Music, FileArchive, File,
-  Upload, Download, Plus, Search, Star, Share2, Trash2, MoreVertical,
-  LayoutGrid, List, ChevronRight, Clock, Users, X, Copy, Link, Eye,
-  EyeOff, Calendar, Lock, RotateCcw, Pencil, ArrowLeft, Home,
-  ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, Shield, FolderPlus,
-  Check, AlertTriangle, Move, LogOut, Settings, HelpCircle, Bell,
-  ChevronDown, Play, Pause, Volume2, VolumeX, Maximize2, SkipBack,
-  SkipForward, CheckCircle2
+  Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, X, Copy, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Bell, ChevronDown, Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, CheckCircle2
 } from 'lucide-react'
 import ambaliLogo from '@/imports/ambalilogocrop-removebg-preview.png'
 import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, createShareLink } from '../lib/api'
@@ -249,6 +242,7 @@ function PreviewModal({ item, siblings, onClose }: { item: DriveItem; siblings: 
 
 // ─── Share Modal ──────────────────────────────────────────────────────────────
 function ShareModal({ item, onClose, onUpdate }: { item: DriveItem; onClose: () => void; onUpdate: (item: DriveItem) => void }) {
+  const user = useAuthStore(s => s.user)
   const [tab, setTab] = useState<'people' | 'link'>('people')
   const [emailInput, setEmailInput] = useState('')
   const [roleInput, setRoleInput] = useState<Role>('viewer')
@@ -680,7 +674,9 @@ function ContextMenu({
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
 export default function Drive() {
+  const QUOTA = 15 * 1024 ** 3;
   const [items, setItems] = useState<DriveItem[]>([])
+  const USED_BYTES = items.reduce((acc, i) => acc + i.size, 0);
   const [loadingItems, setLoadingItems] = useState(false)
   const [section, setSection] = useState<NavSection>('myDrive')
   const [folderId, setFolderId] = useState<string | null>(null)
@@ -851,7 +847,7 @@ export default function Drive() {
     handleFileInput(e.dataTransfer.files)
   }, [folderId])
 
-  const ctxItem = ctx ? items.find(i => i.id === ctx.itemId) ?? [].find(i => i.id === ctx.itemId) : null
+  const ctxItem = ctx ? items.find(i => i.id === ctx.itemId) : null
 
   const trashCount = items.filter(i => i.trashed).length
 
@@ -1195,6 +1191,7 @@ function FileGrid({ items, allItems, selected, section, onSelect, onOpen, onCtx,
   onCtx: (e: React.MouseEvent, id: string) => void; onStar: (id: string) => void
   onShare: (item: DriveItem) => void; onTrash: (id: string) => void
 }) {
+  const user = useAuthStore(s => s.user)
   const folders = items.filter(i => i.type === 'folder')
   const files = items.filter(i => i.type !== 'folder')
 
@@ -1294,6 +1291,7 @@ function FileList({ items, allItems, selected, section, onSelect, onOpen, onCtx,
   onCtx: (e: React.MouseEvent, id: string) => void; onStar: (id: string) => void
   onShare: (item: DriveItem) => void; onTrash: (id: string) => void
 }) {
+  const user = useAuthStore(s => s.user)
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden fade-in">
       {/* Header */}
