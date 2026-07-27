@@ -3,7 +3,7 @@ import {
   Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, X, Copy, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Bell, ChevronDown, Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, CheckCircle2
 } from 'lucide-react'
 import ambaliLogo from '@/imports/ambalilogocrop-removebg-preview.png'
-import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, createShareLink } from '../lib/api'
+import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, createShareLink, removeShareLink } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -261,7 +261,7 @@ function ShareModal({ item, onClose, onUpdate }: { item: DriveItem; onClose: () 
   const [emailInput, setEmailInput] = useState('')
   const [roleInput, setRoleInput] = useState<Role>('viewer')
   const [shared, setShared] = useState<SharedUser[]>(item.sharedWith)
-  const [link, setLink] = useState<ShareLink>(item.shareLink ?? { url: `https://drive.ambali.io/s/${genId()}`, password: null, expiresAt: null, allowDownload: true })
+  const [link, setLink] = useState<ShareLink>(item.shareLink ?? { url: 'Link will be generated on save', password: null, expiresAt: null, allowDownload: true })
   const [linkActive, setLinkActive] = useState(!!item.shareLink)
   const [copied, setCopied] = useState(false)
   const [showPwInput, setShowPwInput] = useState(false)
@@ -288,13 +288,35 @@ function ShareModal({ item, onClose, onUpdate }: { item: DriveItem; onClose: () 
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const save = () => {
-    onUpdate({
-      ...item,
-      sharedWith: shared,
-      shareLink: linkActive ? { ...link, password: showPwInput && pwValue ? pwValue : null, expiresAt: showExpiry && expiryValue ? expiryValue + 'T23:59:00Z' : null } : null,
-    })
-    onClose()
+  const save = async () => {
+    try {
+      if (linkActive) {
+        const pass = showPwInput && pwValue ? pwValue : null;
+        const expiry = showExpiry && expiryValue ? expiryValue + 'T23:59:00Z' : null;
+        const res = await createShareLink(item.id, link.allowDownload, pass, expiry);
+        onUpdate({
+          ...item,
+          sharedWith: shared,
+          shareLink: {
+            url: window.location.origin + '/s/' + res.urlHash,
+            password: res.passwordHash ? 'has_password' : null,
+            expiresAt: res.expiresAt,
+            allowDownload: res.allowDownload
+          }
+        });
+      } else if (item.shareLink) {
+        await removeShareLink(item.id);
+        onUpdate({
+          ...item,
+          sharedWith: shared,
+          shareLink: null
+        });
+      }
+      onClose();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to save share settings');
+    }
   }
 
   return (
@@ -709,7 +731,12 @@ export default function Drive() {
         id: f.id, name: f.name, type: f.type, size: Number(f.size),
         modified: f.updatedAt, starred: f.isStarred, trashed: f.isTrashed,
         trashedAt: f.trashedAt, parentId: f.parentId, sharedWith: [],
-        shareLink: f.publicLink, owner: f.ownerId,
+        shareLink: f.publicLink ? {
+          url: window.location.origin + '/s/' + f.publicLink.urlHash,
+          password: f.publicLink.passwordHash ? 'has_password' : null,
+          expiresAt: f.publicLink.expiresAt,
+          allowDownload: f.publicLink.allowDownload
+        } : null, owner: f.ownerId,
         thumbnailUrl: f.type === 'image' ? `/api/files/${f.id}/download?token=${useAuthStore.getState().token}` : undefined
       }))
       setItems(mapped)

@@ -89,12 +89,34 @@ export async function moveFile(id: string, parentId: string | null) {
   return res.json();
 }
 
-export async function createShareLink(id: string, allowDownload: boolean = true) {
+export async function createShareLink(id: string, allowDownload: boolean = true, password?: string | null, expiresAt?: string | null) {
   const res = await fetch(`/api/share/${id}/link`, {
     method: 'POST',
     headers: { ...getHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ allowDownload })
+    body: JSON.stringify({ allowDownload, password, expiresAt })
   });
   if (!res.ok) throw new Error('Failed to create share link');
+  return res.json();
+}
+
+export async function removeShareLink(id: string) {
+  const res = await fetch(`/api/share/${id}/link`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error('Failed to remove share link');
+  return res.json();
+}
+
+export async function getPublicFile(hash: string, password?: string) {
+  let url = `/api/share/public/${hash}`;
+  if (password) {
+    url += `?password=${encodeURIComponent(password)}`;
+  }
+  const res = await fetch(url);
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw error;
+  }
   return res.json();
 }

@@ -19,7 +19,7 @@ Ensure you have the following setup in your `.env`:
 
 ---
 
-## 🚀 Production Deployment (Recommended)
+##  Production Deployment (Recommended)
 
 The easiest way to run Ambali Drive in a production environment is using our unified Docker Compose setup. It automatically runs the Database and the combined Web Application in auto-restarting containers.
 
@@ -34,7 +34,7 @@ docker-compose up -d --build
 
 ---
 
-## 🛠️ Local Development
+##  Local Development
 
 If you want to modify the code or run it without containerizing the Node application, follow these steps:
 

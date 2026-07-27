@@ -97,7 +97,10 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<a
       orderBy: [
         { type: 'desc' }, // Folders first? Prisma string sort would sort 'folder' alphabetically...
         { name: 'asc' }
-      ]
+      ],
+      include: {
+        publicLink: true
+      }
     });
 
     // Post-sort to put folders first
