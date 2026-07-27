@@ -754,61 +754,11 @@ export default function Drive() {
   }, [folderId, section])
 
   const [search, setSearch] = useState('')
-  const [dragBox, setDragBox] = useState<{ startX: number, startY: number, endX: number, endY: number } | null>(null);
-  const dragBoxRef = useRef<{ startX: number, startY: number } | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [isDragging, setIsDragging] = useState(false)
   const [uploads, setUploads] = useState<UploadItem[] | null>(null)
   const [ctx, setCtx] = useState<CtxMenu | null>(null)
   const [newMenu, setNewMenu] = useState(false)
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    const target = e.target as HTMLElement;
-    if (target.closest('[data-file-id]') || target.closest('button') || target.closest('input') || target.closest('.no-drag')) {
-      return;
-    }
-    dragBoxRef.current = { startX: e.clientX, startY: e.clientY };
-    setDragBox({ startX: e.clientX, startY: e.clientY, endX: e.clientX, endY: e.clientY });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!dragBoxRef.current) return;
-    setDragBox({ ...dragBoxRef.current, endX: e.clientX, endY: e.clientY });
-    
-    // Collision detection
-    const boxLeft = Math.min(dragBoxRef.current.startX, e.clientX);
-    const boxRight = Math.max(dragBoxRef.current.startX, e.clientX);
-    const boxTop = Math.min(dragBoxRef.current.startY, e.clientY);
-    const boxBottom = Math.max(dragBoxRef.current.startY, e.clientY);
-
-    const fileEls = document.querySelectorAll('[data-file-id]');
-    const newSelected = new Set(selected); // Keep previously selected items? 
-    // Usually drag select REPLACES selection unless Shift/Ctrl is held.
-    // Let's replace selection if neither is held, or add if Ctrl is held.
-    let baseSelection = (e.ctrlKey || e.metaKey || e.shiftKey) ? new Set(selected) : new Set<string>();
-
-    fileEls.forEach(el => {
-      const rect = el.getBoundingClientRect();
-      const overlap = !(rect.right < boxLeft || rect.left > boxRight || rect.bottom < boxTop || rect.top > boxBottom);
-      const id = el.getAttribute('data-file-id');
-      if (id) {
-        if (overlap) {
-          baseSelection.add(id);
-        } else if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
-           // We only remove if it wasn't selected before the drag started, but it's hard to track. 
-           // For simplicity, we just rebuild the set from scratch if no modifiers.
-        }
-      }
-    });
-    setSelected(baseSelection);
-  };
-
-  const handleMouseUp = () => {
-    dragBoxRef.current = null;
-    setDragBox(null);
-  };
-
 
   // Modals
   const [previewItem, setPreviewItem] = useState<DriveItem | null>(null)
@@ -1122,7 +1072,7 @@ export default function Drive() {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
+        <main className="flex-1 overflow-y-auto"
           onClick={() => { setSelected(new Set()); setCtx(null); setNewMenu(false) }}
         >
           <div className="px-6 pt-5 pb-8">
@@ -1320,24 +1270,6 @@ export default function Drive() {
         <EmptyTrashModal count={trashCount} onClose={() => setShowEmptyTrash(false)} onConfirm={emptyTrash} />
       )}
 
-      
-        {dragBox && (
-          <div
-            id="selection-box"
-            style={{
-              position: 'fixed',
-              pointerEvents: 'none',
-              zIndex: 9999,
-              border: '1px solid rgba(66, 133, 244, 0.5)',
-              backgroundColor: 'rgba(66, 133, 244, 0.1)',
-              left: Math.min(dragBox.startX, dragBox.endX),
-              top: Math.min(dragBox.startY, dragBox.endY),
-              width: Math.abs(dragBox.endX - dragBox.startX),
-              height: Math.abs(dragBox.endY - dragBox.startY),
-            }}
-          />
-        )}
-  
       {/* Upload toast */}
       {uploads && (
         <UploadToast files={uploads} onDone={() => setUploads(null)} />
@@ -1364,19 +1296,17 @@ function FileGrid({ items, allItems, selected, section, onSelect, onOpen, onCtx,
       <div
         onContextMenu={e => onCtx(e, item.id)}
         onClick={e => {
-            e.stopPropagation();
-            if (e.ctrlKey || e.metaKey) {
-              const s = new Set(selected);
-              if (s.has(item.id)) s.delete(item.id);
-              else s.add(item.id);
-              onSelect(s);
-            } else if (selected.has(item.id)) {
-              onOpen(item);
-            } else {
-              onSelect(new Set([item.id]));
-            }
-          }}
-        onDoubleClick={e => { e.stopPropagation(); onOpen(item) }}
+          e.stopPropagation();
+          if (e.ctrlKey || e.metaKey) {
+            const s = new Set(selected);
+            if (s.has(item.id)) s.delete(item.id);
+            else s.add(item.id);
+            onSelect(s);
+          } else {
+            onSelect(new Set([item.id]));
+          }
+        }}
+        onDoubleClick={e => { e.stopPropagation(); onOpen(item); }}
         className={`group relative rounded-2xl border cursor-pointer transition-all select-none ${isSelected ? 'border-blue-300 bg-blue-50 shadow-sm' : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'}`}
       >
         {/* Thumbnail or icon area */}
@@ -1483,19 +1413,17 @@ function FileList({ items, allItems, selected, section, onSelect, onOpen, onCtx,
             key={item.id}
             onContextMenu={e => onCtx(e, item.id)}
             onClick={e => {
-            e.stopPropagation();
-            if (e.ctrlKey || e.metaKey) {
-              const s = new Set(selected);
-              if (s.has(item.id)) s.delete(item.id);
-              else s.add(item.id);
-              onSelect(s);
-            } else if (selected.has(item.id)) {
-              onOpen(item);
-            } else {
-              onSelect(new Set([item.id]));
-            }
-          }}
-        onDoubleClick={e => { e.stopPropagation(); onOpen(item) }}
+              e.stopPropagation();
+              if (e.ctrlKey || e.metaKey) {
+                const s = new Set(selected);
+                if (s.has(item.id)) s.delete(item.id);
+                else s.add(item.id);
+                onSelect(s);
+              } else {
+                onSelect(new Set([item.id]));
+              }
+            }}
+            onDoubleClick={e => { e.stopPropagation(); onOpen(item); }}
             className={`group grid grid-cols-[minmax(0,1fr)_120px_120px_80px] gap-3 px-4 py-2.5 items-center cursor-pointer transition-colors select-none ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'} ${i < items.length - 1 ? 'border-b border-gray-50' : ''}`}
           >
             <div className="flex items-center gap-2.5 min-w-0">

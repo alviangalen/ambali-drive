@@ -25,6 +25,28 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+async function getUniqueFilename(ownerId: string, parentId: string | null, originalName: string, isFolder: boolean = false): Promise<string> {
+  const existingFiles = await prisma.file.findMany({
+    where: { ownerId, parentId, isTrashed: false, type: isFolder ? 'folder' : { not: 'folder' } },
+    select: { name: true }
+  });
+  const names = new Set(existingFiles.map(f => f.name));
+  
+  if (!names.has(originalName)) return originalName;
+
+  const dotIndex = originalName.lastIndexOf('.');
+  const base = dotIndex !== -1 && !isFolder ? originalName.slice(0, dotIndex) : originalName;
+  const ext = dotIndex !== -1 && !isFolder ? originalName.slice(dotIndex) : '';
+
+  let i = 1;
+  let newName = `${base} (${i})${ext}`;
+  while (names.has(newName)) {
+    i++;
+    newName = `${base} (${i})${ext}`;
+  }
+  return newName;
+}
+
 // Create Folder
 router.post('/folder', authenticate, async (req: AuthRequest, res: Response): Promise<any> => {
   try {
@@ -33,9 +55,11 @@ router.post('/folder', authenticate, async (req: AuthRequest, res: Response): Pr
 
     if (!name) return res.status(400).json({ error: 'Folder name is required' });
 
+    const finalName = await getUniqueFilename(userId, parentId || null, name, true);
+
     const folder = await prisma.file.create({
       data: {
-        name,
+        name: finalName,
         type: 'folder',
         ownerId: userId,
         parentId: parentId || null
@@ -63,9 +87,11 @@ router.post('/upload', authenticate, upload.single('file'), async (req: AuthRequ
     else if (file.mimetype.startsWith('video/')) type = 'video';
     else if (file.mimetype === 'application/pdf') type = 'pdf';
 
+    const finalName = await getUniqueFilename(userId, parentId || null, file.originalname, false);
+
     const dbFile = await prisma.file.create({
       data: {
-        name: file.originalname,
+        name: finalName,
         type,
         size: file.size ? BigInt(file.size) : BigInt(0),
         physicalPath: file.filename, // just the filename, directory is known
@@ -143,9 +169,14 @@ router.put('/:id/rename', authenticate, async (req: AuthRequest, res: Response):
 
     if (!name) return res.status(400).json({ error: 'New name is required' });
 
+    const existing = await prisma.file.findUnique({ where: { id, ownerId: userId } });
+    if (!existing) return res.status(404).json({ error: 'Not found' });
+
+    const finalName = await getUniqueFilename(userId, existing.parentId, name, existing.type === 'folder');
+
     const file = await prisma.file.update({
       where: { id, ownerId: userId },
-      data: { name }
+      data: { name: finalName }
     });
     res.json(file);
   } catch (error) {
@@ -161,9 +192,17 @@ router.put('/:id/move', authenticate, async (req: AuthRequest, res: Response): P
     const { parentId } = req.body;
     const userId = req.user!.userId;
 
+    const existing = await prisma.file.findUnique({ where: { id, ownerId: userId } });
+    if (!existing) return res.status(404).json({ error: 'Not found' });
+
+    const finalName = await getUniqueFilename(userId, parentId || null, existing.name, existing.type === 'folder');
+
     const file = await prisma.file.update({
       where: { id, ownerId: userId },
-      data: { parentId: parentId || null }
+      data: { 
+        parentId: parentId || null,
+        name: finalName
+      }
     });
     res.json(file);
   } catch (error) {
