@@ -737,7 +737,7 @@ function ContextMenu({
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
 export default function Drive() {
-  const QUOTA = 15 * 1024 ** 3;
+  const [QUOTA, setQuota] = useState(15 * 1024 ** 3);
   const [items, setItems] = useState<DriveItem[]>([])
   const [USED_BYTES, setUsedBytes] = useState(0);
   const [loadingItems, setLoadingItems] = useState(false)
@@ -754,7 +754,7 @@ export default function Drive() {
     try {
       setLoadingItems(true)
       const data = await fetchFiles(folderId, section === 'trash')
-      getStorageUsed().then(s => setUsedBytes(s.used)).catch(console.error)
+      getStorageUsed().then(s => { setUsedBytes(s.used); if (s.quota) setQuota(s.quota); }).catch(console.error)
       // Map API files to DriveItem interface
       const mapped = data.map((f: any) => ({
         id: f.id, name: f.name, type: f.type, size: Number(f.size),

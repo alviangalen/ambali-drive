@@ -149,17 +149,21 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<a
   }
 });
 
-// Get total storage used
+// Get total storage used and quota
 router.get('/storage', authenticate, async (req: AuthRequest, res: Response): Promise<any> => {
   try {
     const userId = req.user!.userId;
-    // We sum all file sizes for the user
-    const result = await prisma.file.aggregate({
-      where: { ownerId: userId },
-      _sum: { size: true }
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { storageUsed: true, storageQuota: true }
     });
-    const used = Number(result._sum.size || 0);
-    res.json({ used });
+    
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    res.json({ 
+      used: Number(user.storageUsed), 
+      quota: Number(user.storageQuota) 
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to calculate storage' });
