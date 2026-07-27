@@ -83,8 +83,8 @@ router.post('/upload', authenticate, upload.single('file'), async (req: AuthRequ
 
     // Determine type by mimetype loosely
     let type = 'file';
-    if (file.mimetype.startsWith('image/')) type = 'image';
-    else if (file.mimetype.startsWith('video/')) type = 'video';
+    if (file.mimetype?.startsWith('image/')) type = 'image';
+    else if (file.mimetype?.startsWith('video/')) type = 'video';
     else if (file.mimetype === 'application/pdf') type = 'pdf';
 
     const finalName = await getUniqueFilename(userId, parentId || null, file.originalname, false);
