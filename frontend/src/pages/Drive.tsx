@@ -18,7 +18,7 @@ interface DriveItem {
   starred: boolean; trashed: boolean; trashedAt?: string; parentId: string | null
   sharedWith: SharedUser[]; shareLink: ShareLink | null; thumbnailUrl?: string; owner: string
 }
-interface UploadItem { id: string; name: string; size: number; progress: number; done: boolean }
+interface UploadItem { id: string; name: string; size: number; progress: number; done: boolean; error?: boolean }
 interface CtxMenu { x: number; y: number; itemId: string }
 
 
@@ -600,7 +600,7 @@ function UploadToast({ files, onDone }: { files: UploadItem[]; onDone: () => voi
             </div>
             <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-300 ${f.done ? 'bg-green-500' : 'progress-bar'}`}
+                className={`h-full rounded-full transition-all duration-300 ${f.error ? 'bg-red-500' : f.done ? 'bg-green-500' : 'progress-bar'}`}
                 style={{ width: `${f.progress}%` }}
               />
             </div>
@@ -838,7 +838,7 @@ export default function Drive() {
         setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: 100, done: true } : x) : null)
       } catch (err) {
         console.error('Folder file upload failed:', err)
-        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, done: true } : x) : null)
+        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, done: true, error: true } : x) : null)
       }
     }
     loadData()
@@ -862,7 +862,7 @@ export default function Drive() {
         loadData()
       } catch (err) {
         console.error('Upload failed:', err)
-        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, done: true } : x) : null)
+        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, done: true, error: true } : x) : null)
       }
     }
   }

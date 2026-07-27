@@ -4,6 +4,11 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Fix BigInt serialization for Prisma
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
 dotenv.config({ path: path.resolve(process.cwd(), '../.env') }); // For dev
 dotenv.config(); // For production if .env is in same dir
 

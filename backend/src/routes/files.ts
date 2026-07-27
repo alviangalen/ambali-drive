@@ -67,7 +67,7 @@ router.post('/upload', authenticate, upload.single('file'), async (req: AuthRequ
       data: {
         name: file.originalname,
         type,
-        size: file.size,
+        size: file.size ? BigInt(file.size) : BigInt(0),
         physicalPath: file.filename, // just the filename, directory is known
         ownerId: userId,
         parentId: parentId || null
