@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import {
-  Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, X, Copy, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Bell, ChevronDown, Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, CheckCircle2
+  Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Bell, ChevronDown, Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, CheckCircle2
 } from 'lucide-react'
 import ambaliLogo from '@/imports/ambalilogocrop-removebg-preview.png'
-import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, createShareLink, removeShareLink, getStorageUsed } from '../lib/api'
+import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, copyFile, createShareLink, removeShareLink, getStorageUsed } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -578,7 +578,8 @@ function EmptyTrashModal({ count, onClose, onConfirm }: { count: number; onClose
 }
 
 // ─── Move Modal ───────────────────────────────────────────────────────────────
-function MoveModal({ item, allItems, onClose, onMove }: { item: DriveItem; allItems: DriveItem[]; onClose: () => void; onMove: (itemId: string, targetId: string | null) => void }) {
+function MoveModal({ items, allItems, onClose, onMove }: { items: DriveItem[]; allItems: DriveItem[]; onClose: () => void; onMove: (itemId: string, targetId: string | null) => void }) {
+  const item = items[0];
   const [selected, setSelected] = useState<string | null>(item.parentId)
   const folders = allItems.filter(i => i.type === 'folder' && !i.trashed && i.id !== item.id)
 
@@ -607,7 +608,7 @@ function MoveModal({ item, allItems, onClose, onMove }: { item: DriveItem; allIt
         </div>
         <div className="flex justify-end gap-2 mt-4">
           <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
-          <button onClick={() => { onMove(item.id, selected); onClose() }} className="px-5 py-2 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0D4A8A] transition-colors">Move here</button>
+          <button onClick={() => { items.forEach(i => onMove(i.id, selected)); onClose() }} className="px-5 py-2 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0D4A8A] transition-colors">Move here</button>
         </div>
       </div>
     </Modal>
@@ -650,12 +651,12 @@ function UploadToast({ files, onDone }: { files: UploadItem[]; onDone: () => voi
 
 // ─── Context Menu ─────────────────────────────────────────────────────────────
 function ContextMenu({
-  ctx, item, section, onClose, onPreview, onStar, onShare, onRename, onMove, onTrash, onRestore, onDelete, onDownload
+  ctx, item, section, onClose, onPreview, onStar, onShare, onRename, onMove, onTrash, onRestore, onDelete, onDownload, onCopy, onCut
 }: {
   ctx: CtxMenu; item: DriveItem; section: NavSection; onClose: () => void;
   onPreview: () => void; onStar: () => void; onShare: () => void;
   onRename: () => void; onMove: () => void; onTrash: () => void;
-  onRestore: () => void; onDelete: () => void; onDownload: () => void;
+  onRestore: () => void; onDelete: () => void; onDownload: () => void; onCopy?: () => void; onCut?: () => void;
 }) {
   const menuRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -701,6 +702,8 @@ function ContextMenu({
           <div className="h-px bg-gray-100 my-1" />
           <MenuItem icon={Pencil} label="Rename" onClick={onRename} />
           <MenuItem icon={Move} label="Move to…" onClick={onMove} />
+          {onCopy && <MenuItem icon={Copy} label="Copy" onClick={onCopy} />}
+          {onCut && <MenuItem icon={Scissors} label="Cut" onClick={onCut} />}
           <div className="h-px bg-gray-100 my-1" />
           <MenuItem icon={Trash2} label="Move to trash" onClick={onTrash} danger />
         </>
@@ -764,7 +767,8 @@ export default function Drive() {
   const [previewItem, setPreviewItem] = useState<DriveItem | null>(null)
   const [shareItem, setShareItem] = useState<DriveItem | null>(null)
   const [renameItem, setRenameItem] = useState<DriveItem | null>(null)
-  const [moveItem, setMoveItem] = useState<DriveItem | null>(null)
+  const [moveItems, setMoveItems] = useState<DriveItem[] | null>(null)
+  const [clipboard, setClipboard] = useState<{ action: 'copy' | 'cut', items: DriveItem[] } | null>(null)
   const [showNewFolder, setShowNewFolder] = useState(false)
   const [showEmptyTrash, setShowEmptyTrash] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -869,6 +873,28 @@ export default function Drive() {
     setItems(i => i.map(x => x.id === id ? { ...x, name } : x))
     await renameFile(id, name).catch(loadData)
   }
+  const handlePaste = async () => {
+    if (!clipboard) return;
+    try {
+      if (clipboard.action === 'copy') {
+        for (const item of clipboard.items) {
+          if (item.type !== 'folder') {
+            await copyFile(item.id, folderId);
+          }
+        }
+      } else if (clipboard.action === 'cut') {
+        for (const item of clipboard.items) {
+          await moveFile(item.id, folderId);
+        }
+      }
+      setClipboard(null);
+      loadData();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to paste items');
+    }
+  }
+
   const moveItemFn = async (itemId: string, targetId: string | null) => {
     setItems(i => i.map(x => x.id === itemId ? { ...x, parentId: targetId, modified: new Date().toISOString() } : x))
     await moveFile(itemId, targetId).catch(loadData)
@@ -1234,14 +1260,57 @@ export default function Drive() {
         <ContextMenu
           ctx={ctx} item={ctxItem} section={section} onClose={() => setCtx(null)}
           onPreview={() => setPreviewItem(ctxItem)}
-          onStar={() => toggleStar(ctxItem.id)}
           onShare={() => setShareItem(ctxItem)}
           onRename={() => setRenameItem(ctxItem)}
-          onMove={() => setMoveItem(ctxItem)}
-          onTrash={() => trashItem(ctxItem.id)}
-          onRestore={() => restoreItem(ctxItem.id)}
-          onDelete={() => deleteItem(ctxItem.id)}
-          onDownload={() => downloadFile(ctxItem.id, items.find(i => i.id === ctxItem.id)?.name || "file")}
+          onStar={() => {
+            const itemsToProcess = (selected.size > 1 && selected.has(ctxItem.id)) ? Array.from(selected) : [ctxItem.id];
+            itemsToProcess.forEach(id => toggleStar(id));
+            setCtx(null);
+          }}
+          onMove={() => {
+            const itemsToProcess = (selected.size > 1 && selected.has(ctxItem.id)) ? Array.from(selected).map(id => items.find(i => i.id === id)!) : [ctxItem];
+            setMoveItems(itemsToProcess);
+            setCtx(null);
+          }}
+          onTrash={() => {
+            const itemsToProcess = (selected.size > 1 && selected.has(ctxItem.id)) ? Array.from(selected) : [ctxItem.id];
+            itemsToProcess.forEach(id => trashItem(id));
+            setSelected(new Set());
+            setCtx(null);
+          }}
+          onRestore={() => {
+            const itemsToProcess = (selected.size > 1 && selected.has(ctxItem.id)) ? Array.from(selected) : [ctxItem.id];
+            itemsToProcess.forEach(id => restoreItem(id));
+            setSelected(new Set());
+            setCtx(null);
+          }}
+          onDelete={() => {
+            const itemsToProcess = (selected.size > 1 && selected.has(ctxItem.id)) ? Array.from(selected) : [ctxItem.id];
+            itemsToProcess.forEach(id => deleteItem(id));
+            setSelected(new Set());
+            setCtx(null);
+          }}
+          onDownload={() => {
+            const itemsToProcess = (selected.size > 1 && selected.has(ctxItem.id)) ? Array.from(selected) : [ctxItem.id];
+            itemsToProcess.forEach(id => {
+              const it = items.find(i => i.id === id);
+              if (it && it.type !== 'folder') downloadFile(id, it.name);
+            });
+            setSelected(new Set());
+            setCtx(null);
+          }}
+          onCopy={() => {
+            const itemsToProcess = (selected.size > 1 && selected.has(ctxItem.id)) ? Array.from(selected).map(id => items.find(i => i.id === id)!) : [ctxItem];
+            setClipboard({ action: 'copy', items: itemsToProcess });
+            setSelected(new Set());
+            setCtx(null);
+          }}
+          onCut={() => {
+            const itemsToProcess = (selected.size > 1 && selected.has(ctxItem.id)) ? Array.from(selected).map(id => items.find(i => i.id === id)!) : [ctxItem];
+            setClipboard({ action: 'cut', items: itemsToProcess });
+            setSelected(new Set());
+            setCtx(null);
+          }}
         />
       )}
 
@@ -1260,14 +1329,33 @@ export default function Drive() {
       {renameItem && (
         <RenameModal item={renameItem} onClose={() => setRenameItem(null)} onRename={renameItemFn} />
       )}
-      {moveItem && (
-        <MoveModal item={moveItem} allItems={items} onClose={() => setMoveItem(null)} onMove={moveItemFn} />
+      {moveItems && (
+        <MoveModal items={moveItems} allItems={items} onClose={() => setMoveItems(null)} onMove={moveItemFn} />
       )}
       {showNewFolder && (
         <NewFolderModal onClose={() => setShowNewFolder(false)} onCreate={createFolder} />
       )}
       {showEmptyTrash && (
         <EmptyTrashModal count={trashCount} onClose={() => setShowEmptyTrash(false)} onConfirm={emptyTrash} />
+      )}
+
+      
+      {/* Clipboard Bar */}
+      {clipboard && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white rounded-full shadow-xl px-5 py-3 flex items-center gap-4 slide-up">
+          <div className="flex items-center gap-2">
+            {clipboard.action === 'copy' ? <Copy size={16} className="text-gray-400" /> : <Scissors size={16} className="text-gray-400" />}
+            <span className="text-sm font-medium">{clipboard.items.length} item{clipboard.items.length !== 1 ? 's' : ''} {clipboard.action === 'copy' ? 'copied' : 'cut'}</span>
+          </div>
+          <div className="w-px h-4 bg-gray-700"></div>
+          <button onClick={handlePaste} className="flex items-center gap-1.5 text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+            <Clipboard size={16} />
+            Paste here
+          </button>
+          <button onClick={() => setClipboard(null)} className="p-1 text-gray-400 hover:text-white transition-colors">
+            <X size={16} />
+          </button>
+        </div>
       )}
 
       {/* Upload toast */}

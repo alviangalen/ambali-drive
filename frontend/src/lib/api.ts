@@ -89,6 +89,19 @@ export async function moveFile(id: string, parentId: string | null) {
   return res.json();
 }
 
+export async function copyFile(id: string, parentId: string | null) {
+  const res = await fetch(`${BASE_URL}/${id}/copy`, {
+    method: 'POST',
+    headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ parentId })
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to copy');
+  }
+  return res.json();
+}
+
 export async function createShareLink(id: string, allowDownload: boolean = true, password?: string | null, expiresAt?: string | null) {
   const res = await fetch(`/api/share/${id}/link`, {
     method: 'POST',

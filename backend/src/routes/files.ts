@@ -211,6 +211,52 @@ router.put('/:id/move', authenticate, async (req: AuthRequest, res: Response): P
   }
 });
 
+// Copy
+router.post('/:id/copy', authenticate, async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const id = req.params.id as string;
+    const { parentId } = req.body;
+    const userId = req.user!.userId;
+
+    const existing = await prisma.file.findUnique({ where: { id, ownerId: userId } });
+    if (!existing) return res.status(404).json({ error: 'Not found' });
+    
+    // We only support copying files for now
+    if (existing.type === 'folder') {
+      return res.status(400).json({ error: 'Cannot copy folders yet' });
+    }
+
+    const finalName = await getUniqueFilename(userId, parentId || null, existing.name, false);
+
+    let newPhysicalPath = null;
+    if (existing.physicalPath) {
+      const srcPath = path.join(storageDir, existing.physicalPath);
+      if (fs.existsSync(srcPath)) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        newPhysicalPath = uniqueSuffix + '-' + path.basename(existing.physicalPath);
+        const destPath = path.join(storageDir, newPhysicalPath);
+        fs.copyFileSync(srcPath, destPath);
+      }
+    }
+
+    const copiedFile = await prisma.file.create({
+      data: {
+        name: finalName,
+        type: existing.type,
+        size: existing.size,
+        physicalPath: newPhysicalPath,
+        ownerId: userId,
+        parentId: parentId || null
+      }
+    });
+
+    res.json(copiedFile);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to copy' });
+  }
+});
+
 // Trash (Move to trash)
 router.put('/:id/trash', authenticate, async (req: AuthRequest, res: Response): Promise<any> => {
   try {
