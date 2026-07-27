@@ -136,7 +136,7 @@ function PreviewModal({ item, siblings, onClose, onDownload }: { item: DriveItem
               </button>
             </>
           )}
-          <button className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-colors">
+          <button onClick={() => onDownload(current.id, current.name)} className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-colors">
             <Download size={16} />
           </button>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-colors">
@@ -207,7 +207,7 @@ function PreviewModal({ item, siblings, onClose, onDownload }: { item: DriveItem
           </div>
         )}
         {current.type === 'pdf' && (
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-4 w-full">
             <div className="w-full max-w-2xl h-[60vh] bg-white rounded-xl flex items-center justify-center border border-white/10">
               <div className="text-center text-gray-400">
                 <FileText size={56} strokeWidth={1} color="#EF4444" className="mx-auto mb-3" />
@@ -221,7 +221,7 @@ function PreviewModal({ item, siblings, onClose, onDownload }: { item: DriveItem
           </div>
         )}
         { !['image', 'video', 'audio', 'pdf'].includes(current.type) && (
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-4 w-full">
             <div className="w-full max-w-2xl h-[60vh] bg-white rounded-xl flex items-center justify-center border border-white/10">
               <div className="text-center text-gray-400">
                 <FileText size={56} strokeWidth={1} color="#6B7280" className="mx-auto mb-3" />
