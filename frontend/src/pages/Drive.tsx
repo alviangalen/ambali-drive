@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo, useLayoutEffect } from 'react'
 import {
   Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Bell, ChevronDown, Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, CheckCircle2
 } from 'lucide-react'
@@ -665,12 +665,34 @@ function ContextMenu({
     return () => window.removeEventListener('mousedown', fn)
   }, [])
 
-  const style: React.CSSProperties = {
+  const [style, setStyle] = useState<React.CSSProperties>({
     position: 'fixed',
-    top: Math.min(ctx.y, window.innerHeight - 300),
-    left: Math.min(ctx.x, window.innerWidth - 210),
-    zIndex: 100
-  }
+    top: ctx.y,
+    left: ctx.x,
+    zIndex: 100,
+    opacity: 0
+  })
+
+  useLayoutEffect(() => {
+    if (menuRef.current) {
+      const rect = menuRef.current.getBoundingClientRect()
+      let newTop = ctx.y
+      let newLeft = ctx.x
+      if (newTop + rect.height > window.innerHeight) {
+        newTop = Math.max(10, window.innerHeight - rect.height - 10)
+      }
+      if (newLeft + rect.width > window.innerWidth) {
+        newLeft = Math.max(10, window.innerWidth - rect.width - 10)
+      }
+      setStyle({
+        position: 'fixed',
+        top: newTop,
+        left: newLeft,
+        zIndex: 100,
+        opacity: 1
+      })
+    }
+  }, [ctx])
 
   const MenuItem = ({ icon: Icon, label, onClick, danger = false }: { icon: React.ComponentType<any>; label: string; onClick: () => void; danger?: boolean }) => (
     <button
