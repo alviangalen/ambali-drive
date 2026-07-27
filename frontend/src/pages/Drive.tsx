@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback, useEffect, useMemo, useLayoutEffect } from 'react'
 import {
-  Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Shield, Bell, ChevronDown, Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, CheckCircle2, LogOut
+  Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, User, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Shield, Bell, ChevronDown, Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, CheckCircle2, LogOut
 } from 'lucide-react'
 import ambaliLogo from '@/imports/ambalilogocrop-removebg-preview.png'
-import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, copyFile, createShareLink, removeShareLink, getStorageUsed } from '../lib/api'
+import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, copyFile, createShareLink, removeShareLink, getStorageUsed, updateProfile } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -746,6 +746,7 @@ export default function Drive() {
   const [folderHistory, setFolderHistory] = useState<{id: string, name: string}[]>([])
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
   const logout = useAuthStore(s => s.logout)
   const user = useAuthStore(s => s.user)
 
@@ -1021,7 +1022,20 @@ export default function Drive() {
               New
               <ChevronDown size={14} className="ml-auto" />
             </button>
-            {newMenu && (
+            
+      {profileOpen && (
+        <ProfileModal 
+          user={user} 
+          onClose={() => setProfileOpen(false)} 
+          onUpdated={(newUser: any) => {
+            useAuthStore.setState(state => ({ ...state, user: newUser }));
+            useAuthStore.getState().login(newUser, useAuthStore.getState().token!);
+          }}
+        />
+      )}
+
+
+        {newMenu && (
               <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-20 fade-in">
                 <button onClick={() => { setShowNewFolder(true); setNewMenu(false) }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                   <FolderPlus size={15} className="text-amber-500" />New folder
@@ -1129,6 +1143,10 @@ export default function Drive() {
                         Admin Panel
                       </button>
                     )}
+                    <button onClick={() => { setSettingsOpen(false); setProfileOpen(true); }} className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2.5 transition-colors">
+                      <User size={16} className="text-gray-400" />
+                      Account Settings
+                    </button>
                     <button onClick={() => { setSettingsOpen(false); logout(); }} className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-2.5 transition-colors">
                       <LogOut size={16} className="text-red-500" />
                       Logout
@@ -1596,4 +1614,102 @@ function FileList({ items, allItems, selected, section, onSelect, onOpen, onCtx,
       })}
     </div>
   )
+}
+
+
+function ProfileModal({ user, onClose, onUpdated }: any) {
+  const [name, setName] = useState(user?.name || '');
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const updated = await updateProfile(name, oldPassword, newPassword);
+      onUpdated(updated);
+      onClose();
+      alert('Profile updated successfully');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">Account Settings</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400">
+            <X size={18} />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-start gap-2">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+              <p>{error}</p>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0] transition-colors"
+                required
+              />
+            </div>
+            
+            <div className="pt-2">
+              <h3 className="text-sm font-medium text-gray-900 mb-3">Change Password (Optional)</h3>
+              <div className="space-y-3">
+                <input
+                  type="password"
+                  placeholder="Current Password"
+                  value={oldPassword}
+                  onChange={e => setOldPassword(e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0] transition-colors"
+                />
+                <input
+                  type="password"
+                  placeholder="New Password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0] transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-5 py-2 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0a4080] transition-colors shadow-sm disabled:opacity-70 flex items-center gap-2"
+            >
+              {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }

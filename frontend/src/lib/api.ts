@@ -197,3 +197,16 @@ export async function changeAdminPassword(oldPassword: string, newPassword: stri
   }
   return res.json();
 }
+
+export async function updateProfile(name?: string, oldPassword?: string, newPassword?: string) {
+  const res = await fetch('/api/auth/profile', {
+    method: 'PUT',
+    headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, oldPassword, newPassword })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update profile');
+  }
+  return res.json();
+}

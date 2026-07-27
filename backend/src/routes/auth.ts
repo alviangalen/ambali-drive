@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import prisma from '../lib/prisma.js';
+import { authenticate, AuthRequest } from '../middlewares/auth.js';
 import { verifyGoogleToken } from '../lib/firebase.js';
 
 const router = Router();
@@ -121,4 +122,44 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
   }
 });
 
+
+// PUT /profile
+router.put('/profile', authenticate, async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const { name, oldPassword, newPassword } = req.body;
+    const userId = req.user!.userId;
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const updateData: any = {};
+    if (name) updateData.name = name;
+
+    if (newPassword) {
+      if (!user.passwordHash) {
+        return res.status(400).json({ error: 'Cannot change password for Google-linked accounts' });
+      }
+      if (!oldPassword) {
+        return res.status(400).json({ error: 'Old password is required' });
+      }
+      const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
+      if (!isMatch) {
+        return res.status(400).json({ error: 'Invalid old password' });
+      }
+      updateData.passwordHash = await bcrypt.hash(newPassword, 10);
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData
+    });
+
+    res.json({ id: updatedUser.id, name: updatedUser.name, email: updatedUser.email, role: updatedUser.role });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
 export default router;
+
