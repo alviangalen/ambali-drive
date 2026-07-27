@@ -28,18 +28,46 @@ export async function createFolder(name: string, parentId: string | null = null)
   return res.json();
 }
 
-export async function uploadFile(file: File, parentId: string | null = null) {
-  const formData = new FormData();
-  formData.append('file', file);
-  if (parentId) formData.append('parentId', parentId);
+export function uploadFile(file: File, parentId: string | null = null, onProgress?: (pct: number) => void): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (parentId) formData.append('parentId', parentId);
 
-  const res = await fetch(`${BASE_URL}/upload`, {
-    method: 'POST',
-    headers: getHeaders(), // Don't set Content-Type for FormData, browser does it with boundary
-    body: formData
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${BASE_URL}/upload`);
+    
+    const headers = getHeaders();
+    Object.keys(headers).forEach(key => {
+      xhr.setRequestHeader(key, headers[key as keyof typeof headers]);
+    });
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        const pct = Math.round((e.loaded / e.total) * 100);
+        onProgress(pct);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText));
+        } catch {
+          resolve(xhr.responseText);
+        }
+      } else {
+        try {
+          reject(new Error(JSON.parse(xhr.responseText)?.error || 'Failed to upload file'));
+        } catch {
+          reject(new Error('Failed to upload file'));
+        }
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Network Error'));
+    xhr.send(formData);
   });
-  if (!res.ok) throw new Error('Failed to upload file');
-  return res.json();
 }
 
 export async function renameFile(id: string, name: string) {

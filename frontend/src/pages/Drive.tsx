@@ -941,18 +941,18 @@ export default function Drive() {
     
     // For simplicity, we just upload all files flat to the current folderId.
     // A robust solution would recreate the folder tree, but let's at least upload the files.
-    for (let i = 0; i < fileArray.length; i++) {
-      const file = fileArray[i]
+    await Promise.all(fileArray.map(async (file, i) => {
       const uf = uploadItems[i]
       try {
-        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: 30 } : x) : null)
-        await uploadFile(file, folderId)
+        await uploadFile(file, folderId, (pct) => {
+          setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: pct === 100 ? 99 : pct } : x) : null)
+        })
         setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: 100, done: true } : x) : null)
       } catch (err) {
         console.error('Folder file upload failed:', err)
         setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, done: true, error: true } : x) : null)
       }
-    }
+    }))
     loadData()
   }
 
@@ -964,19 +964,19 @@ export default function Drive() {
     const uploadItems: UploadItem[] = fileArray.map(f => ({ id: genId(), name: f.name, size: f.size, progress: 0, done: false }))
     setUploads(uploadItems)
     
-    for (let i = 0; i < fileArray.length; i++) {
-      const file = fileArray[i]
+    await Promise.all(fileArray.map(async (file, i) => {
       const uf = uploadItems[i]
       try {
-        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: 30 } : x) : null)
-        await uploadFile(file, folderId)
+        await uploadFile(file, folderId, (pct) => {
+          setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: pct === 100 ? 99 : pct } : x) : null)
+        })
         setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: 100, done: true } : x) : null)
-        loadData()
       } catch (err) {
         console.error('Upload failed:', err)
         setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, done: true, error: true } : x) : null)
       }
-    }
+    }))
+    loadData()
   }
 
   const handleDrop = useCallback((e: React.DragEvent) => {
