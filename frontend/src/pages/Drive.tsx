@@ -18,7 +18,7 @@ interface DriveItem {
   starred: boolean; trashed: boolean; trashedAt?: string; parentId: string | null
   sharedWith: SharedUser[]; shareLink: ShareLink | null; thumbnailUrl?: string; owner: string
 }
-interface UploadItem { id: string; name: string; size: number; progress: number; done: boolean; error?: boolean; errorMsg?: string }
+interface UploadItem { id: string; name: string; size: number; progress: number; done: boolean; error?: boolean; errorMsg?: string; abortController?: AbortController }
 interface CtxMenu { x: number; y: number; itemId: string }
 
 
@@ -616,7 +616,7 @@ function MoveModal({ items, allItems, onClose, onMove }: { items: DriveItem[]; a
 }
 
 // ─── Upload Toast ─────────────────────────────────────────────────────────────
-function UploadToast({ files, onDone }: { files: UploadItem[]; onDone: () => void }) {
+function UploadToast({ files, onDone, onCancel }: { files: UploadItem[], onDone: () => void, onCancel: (id: string) => void }) {
   const allDone = files.every(f => f.done)
   return (
     <div className="fixed bottom-5 right-5 z-50 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden slide-up">
@@ -637,7 +637,14 @@ function UploadToast({ files, onDone }: { files: UploadItem[]; onDone: () => voi
                 {f.name}
                 {f.errorMsg && <span className="text-red-500 ml-2 block truncate">{f.errorMsg}</span>}
               </span>
-              <span className="text-xs text-gray-400 flex-shrink-0">{f.done ? fmtBytes(f.size) : `${f.progress}%`}</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-gray-400 flex-shrink-0">{f.done ? fmtBytes(f.size) : `${f.progress}%`}</span>
+                {!f.done && (
+                  <button onClick={() => onCancel(f.id)} className="text-gray-400 hover:text-red-500 transition-colors">
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
             </div>
             <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
               <div
@@ -740,6 +747,9 @@ function ContextMenu({
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
 export default function Drive() {
+  const uploadQueue = useRef<{ file: File, item: UploadItem, folderId: string | null }[]>([])
+  const isUploading = useRef(false)
+  const uploadsRef = useRef<UploadItem[] | null>(null)
   const [QUOTA, setQuota] = useState(15 * 1024 ** 3);
   const [items, setItems] = useState<DriveItem[]>([])
   const [USED_BYTES, setUsedBytes] = useState(0);
@@ -787,6 +797,7 @@ export default function Drive() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [isDragging, setIsDragging] = useState(false)
   const [uploads, setUploads] = useState<UploadItem[] | null>(null)
+  useEffect(() => { uploadsRef.current = uploads; }, [uploads])
   const [ctx, setCtx] = useState<CtxMenu | null>(null)
   const [newMenu, setNewMenu] = useState(false)
 
@@ -935,51 +946,86 @@ export default function Drive() {
   }
 
   
-  const handleFolderInput = async (files: FileList | null) => {
-    if (!files || files.length === 0) return
-    const fileArray = Array.from(files)
-    
-    const uploadItems: UploadItem[] = fileArray.map(f => ({ id: genId(), name: f.name, size: f.size, progress: 0, done: false }))
-    setUploads(uploadItems)
-    
-    // For simplicity, we just upload all files flat to the current folderId.
-    // A robust solution would recreate the folder tree, but let's at least upload the files.
-    await Promise.all(fileArray.map(async (file, i) => {
-      const uf = uploadItems[i]
-      try {
-        await uploadFile(file, folderId, (pct) => {
-          setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: pct === 100 ? 99 : pct } : x) : null)
-        })
-        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: 100, done: true } : x) : null)
-      } catch (err) {
-        console.error('Folder file upload failed:', err)
-        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, done: true, error: true } : x) : null)
+  const processQueue = async () => {
+    if (isUploading.current) return;
+    isUploading.current = true;
+    while (uploadQueue.current.length > 0) {
+      const task = uploadQueue.current.shift();
+      if (!task) continue;
+      const { file, item, folderId: uploadFolderId } = task;
+      
+      if (item.abortController?.signal.aborted) {
+        setUploads(u => u ? u.map(x => x.id === item.id ? { ...x, done: true, error: true, errorMsg: 'Canceled' } : x) : null)
+        continue;
       }
-    }))
-    loadData()
-  }
 
-  const handleFileInput = async (files: FileList | null) => {
-    if (!files || files.length === 0) return
-    const fileArray = Array.from(files)
-    
-    // Setup uploads state
-    const uploadItems: UploadItem[] = fileArray.map(f => ({ id: genId(), name: f.name, size: f.size, progress: 0, done: false }))
-    setUploads(uploadItems)
-    
-    await Promise.all(fileArray.map(async (file, i) => {
-      const uf = uploadItems[i]
       try {
-        await uploadFile(file, folderId, (pct) => {
-          setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: pct === 100 ? 99 : pct } : x) : null)
-        })
-        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: 100, done: true } : x) : null)
+        await uploadFile(file, uploadFolderId, (pct) => {
+          setUploads(u => u ? u.map(x => x.id === item.id ? { ...x, progress: pct === 100 ? 99 : pct } : x) : null)
+        }, item.abortController?.signal)
+        
+        setUploads(u => u ? u.map(x => x.id === item.id ? { ...x, progress: 100, done: true } : x) : null)
+        loadData()
       } catch (err: any) {
         console.error('Upload failed:', err)
-        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, done: true, error: true, errorMsg: err.message || 'Failed' } : x) : null)
+        if (err.message !== 'Upload canceled') {
+          setUploads(u => u ? u.map(x => x.id === item.id ? { ...x, done: true, error: true, errorMsg: err.message || 'Failed' } : x) : null)
+        }
       }
+    }
+    isUploading.current = false;
+  }
+
+  const handleFolderInput = (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    const fileArray = Array.from(files)
+
+    const uploadItems: UploadItem[] = fileArray.map(f => ({ 
+      id: genId(), 
+      name: f.name, 
+      size: f.size, 
+      progress: 0, 
+      done: false,
+      abortController: new AbortController()
     }))
-    loadData()
+
+    setUploads(prev => [...(prev || []), ...uploadItems])
+
+    fileArray.forEach((file, i) => {
+      uploadQueue.current.push({ file, item: uploadItems[i], folderId })
+    })
+
+    processQueue()
+  }
+
+  const handleFileInput = (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    const fileArray = Array.from(files)
+
+    const uploadItems: UploadItem[] = fileArray.map(f => ({ 
+      id: genId(), 
+      name: f.name, 
+      size: f.size, 
+      progress: 0, 
+      done: false,
+      abortController: new AbortController()
+    }))
+
+    setUploads(prev => [...(prev || []), ...uploadItems])
+
+    fileArray.forEach((file, i) => {
+      uploadQueue.current.push({ file, item: uploadItems[i], folderId })
+    })
+
+    processQueue()
+  }
+
+  const handleCancelUpload = (id: string) => {
+    const item = uploadsRef.current?.find(u => u.id === id)
+    if (item && item.abortController) {
+      item.abortController.abort()
+      setUploads(u => u ? u.map(x => x.id === id ? { ...x, done: true, error: true, errorMsg: 'Canceled' } : x) : null)
+    }
   }
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -1427,7 +1473,7 @@ export default function Drive() {
 
       {/* Upload toast */}
       {uploads && (
-        <UploadToast files={uploads} onDone={() => setUploads(null)} />
+        <UploadToast files={uploads} onDone={() => setUploads(null)} onCancel={handleCancelUpload} />
       )}
     </div>
   )
