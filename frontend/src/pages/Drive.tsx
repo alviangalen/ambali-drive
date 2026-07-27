@@ -18,7 +18,7 @@ interface DriveItem {
   starred: boolean; trashed: boolean; trashedAt?: string; parentId: string | null
   sharedWith: SharedUser[]; shareLink: ShareLink | null; thumbnailUrl?: string; owner: string
 }
-interface UploadItem { id: string; name: string; size: number; progress: number; done: boolean; error?: boolean }
+interface UploadItem { id: string; name: string; size: number; progress: number; done: boolean; error?: boolean; errorMsg?: string }
 interface CtxMenu { x: number; y: number; itemId: string }
 
 
@@ -633,7 +633,10 @@ function UploadToast({ files, onDone }: { files: UploadItem[]; onDone: () => voi
         {files.map(f => (
           <div key={f.id}>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-600 truncate flex-1 mr-2">{f.name}</span>
+              <span className="text-xs text-gray-600 truncate flex-1 mr-2">
+                {f.name}
+                {f.errorMsg && <span className="text-red-500 ml-2 block truncate">{f.errorMsg}</span>}
+              </span>
               <span className="text-xs text-gray-400 flex-shrink-0">{f.done ? fmtBytes(f.size) : `${f.progress}%`}</span>
             </div>
             <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
@@ -971,9 +974,9 @@ export default function Drive() {
           setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: pct === 100 ? 99 : pct } : x) : null)
         })
         setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, progress: 100, done: true } : x) : null)
-      } catch (err) {
+      } catch (err: any) {
         console.error('Upload failed:', err)
-        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, done: true, error: true } : x) : null)
+        setUploads(u => u ? u.map(x => x.id === uf.id ? { ...x, done: true, error: true, errorMsg: err.message || 'Failed' } : x) : null)
       }
     }))
     loadData()
