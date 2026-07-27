@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, User as UserIcon, UserPlus } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
@@ -12,6 +12,13 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const token = useAuthStore((state) => state.token);
+
+  useEffect(() => {
+    if (token) {
+      navigate('/drive');
+    }
+  }, [token, navigate]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();

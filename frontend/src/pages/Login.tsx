@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { auth, googleProvider } from '../lib/firebase';
@@ -13,6 +13,13 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const token = useAuthStore((state) => state.token);
+
+  useEffect(() => {
+    if (token) {
+      navigate('/drive');
+    }
+  }, [token, navigate]);
 
   const handleLocalLogin = async (e: React.FormEvent) => {
     e.preventDefault();
