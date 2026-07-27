@@ -104,6 +104,9 @@ app.get(/.*/, (req, res, next) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+server.setTimeout(0);
+server.requestTimeout = 0;
+server.headersTimeout = 0;
