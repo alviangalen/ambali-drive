@@ -766,18 +766,8 @@ export default function Drive() {
 
   // Breadcrumb
   const breadcrumb = useMemo(() => {
-    const crumbs: { id: string | null; name: string }[] = [{ id: null, name: 'My Drive' }]
-    let cur = folderId
-    const trail: DriveItem[] = []
-    while (cur) {
-      const f = items.find(i => i.id === cur)
-      if (!f) break
-      trail.unshift(f)
-      cur = f.parentId
-    }
-    trail.forEach(f => crumbs.push({ id: f.id, name: f.name }))
-    return crumbs
-  }, [folderId, items])
+    return [{ id: null as string | null, name: 'My Drive' }, ...folderHistory]
+  }, [folderHistory])
 
   // Actions
   const downloadFile = (fileId: string, fileName: string) => {
@@ -803,16 +793,21 @@ export default function Drive() {
       });
   };
 
-  const openFolder = (id: string) => {
-    if (folderId) setFolderHistory(h => [...h, { id: folderId, name: items.find(i => i.id === folderId)?.name || 'Folder' }])
-    // Removed invalid history assignment
+  const openFolder = (id: string, name: string) => {
+    setFolderHistory(h => [...h, { id, name }])
     setFolderId(id)
     setSelected(new Set())
     setSection('myDrive')
   }
   const navigateTo = (id: string | null) => {
     setFolderId(id)
-    setFolderHistory([])
+    if (!id) setFolderHistory([])
+    else {
+      setFolderHistory(h => {
+        const idx = h.findIndex(x => x.id === id)
+        return idx >= 0 ? h.slice(0, idx + 1) : h
+      })
+    }
     setSelected(new Set())
   }
   const navigateSection = (s: NavSection) => {
@@ -1177,7 +1172,7 @@ export default function Drive() {
               <FileGrid
                 items={filteredItems} allItems={items} selected={selected} section={section}
                 onSelect={setSelected} onOpen={(item) => {
-                  if (item.type === 'folder') openFolder(item.id)
+                  if (item.type === 'folder') openFolder(item.id, item.name)
                   else setPreviewItem(item)
                 }}
                 onCtx={(e, id) => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, itemId: id }) }}
@@ -1187,7 +1182,7 @@ export default function Drive() {
               <FileList
                 items={filteredItems} allItems={items} selected={selected} section={section}
                 onSelect={setSelected} onOpen={(item) => {
-                  if (item.type === 'folder') openFolder(item.id)
+                  if (item.type === 'folder') openFolder(item.id, item.name)
                   else setPreviewItem(item)
                 }}
                 onCtx={(e, id) => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, itemId: id }) }}
@@ -1271,7 +1266,7 @@ function FileGrid({ items, allItems, selected, section, onSelect, onOpen, onCtx,
     return (
       <div
         onContextMenu={e => onCtx(e, item.id)}
-        onClick={e => { e.stopPropagation(); onSelect(new Set([item.id])) }}
+        onClick={e => { e.stopPropagation(); if (selected.has(item.id) && !e.metaKey && !e.ctrlKey) onOpen(item); else onSelect(new Set([item.id])) }}
         onDoubleClick={e => { e.stopPropagation(); onOpen(item) }}
         className={`group relative rounded-2xl border cursor-pointer transition-all select-none ${isSelected ? 'border-blue-300 bg-blue-50 shadow-sm' : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'}`}
       >
@@ -1378,8 +1373,8 @@ function FileList({ items, allItems, selected, section, onSelect, onOpen, onCtx,
           <div
             key={item.id}
             onContextMenu={e => onCtx(e, item.id)}
-            onClick={e => { e.stopPropagation(); onSelect(new Set([item.id])) }}
-            onDoubleClick={e => { e.stopPropagation(); onOpen(item) }}
+            onClick={e => { e.stopPropagation(); if (selected.has(item.id) && !e.metaKey && !e.ctrlKey) onOpen(item); else onSelect(new Set([item.id])) }}
+        onDoubleClick={e => { e.stopPropagation(); onOpen(item) }}
             className={`group grid grid-cols-[minmax(0,1fr)_120px_120px_80px] gap-3 px-4 py-2.5 items-center cursor-pointer transition-colors select-none ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'} ${i < items.length - 1 ? 'border-b border-gray-50' : ''}`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
