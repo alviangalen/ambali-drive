@@ -99,6 +99,12 @@ router.post('/upload', authenticate, upload.single('file'), async (req: AuthRequ
         parentId: parentId || null
       }
     });
+    
+    // Update user storage
+    await prisma.user.update({
+      where: { id: userId },
+      data: { storageUsed: { increment: file.size ? BigInt(file.size) : BigInt(0) } }
+    });
 
     res.status(201).json(dbFile);
   } catch (error) {
@@ -250,6 +256,12 @@ router.post('/:id/copy', authenticate, async (req: AuthRequest, res: Response): 
       }
     });
 
+    // Update user storage
+    await prisma.user.update({
+      where: { id: userId },
+      data: { storageUsed: { increment: existing.size } }
+    });
+
     res.json(copiedFile);
   } catch (error) {
     console.error(error);
@@ -338,6 +350,12 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res: Response): Pro
 
     await prisma.file.delete({
       where: { id }
+    });
+
+    // Update user storage
+    await prisma.user.update({
+      where: { id: userId },
+      data: { storageUsed: { decrement: file.size } }
     });
 
     res.json({ success: true });

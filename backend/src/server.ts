@@ -19,8 +19,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
-// Seed Admin Account
-const seedAdmin = async () => {
+// Seed Admin Account and Recalculate Storage
+const initializeSystem = async () => {
   try {
     const adminEmail = 'admin@ambali.site';
     const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
@@ -36,11 +36,25 @@ const seedAdmin = async () => {
       });
       console.log('Seeded super admin account.');
     }
+
+    // One-time fix: Recalculate storage for all users
+    const users = await prisma.user.findMany();
+    for (const user of users) {
+      const files = await prisma.file.findMany({ where: { ownerId: user.id, type: { not: 'folder' } } });
+      const totalSize = files.reduce((acc, f) => acc + f.size, BigInt(0));
+      if (user.storageUsed !== totalSize) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { storageUsed: totalSize }
+        });
+        console.log(`Recalculated storage for ${user.email}: ${totalSize} bytes`);
+      }
+    }
   } catch (err) {
-    console.error('Failed to seed admin', err);
+    console.error('Failed to initialize system', err);
   }
 };
-seedAdmin();
+initializeSystem();
 
 const app = express();
 const port = process.env.PORT || 8000;
