@@ -10,3 +10,4 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - lucide-react@1.27.0
+  - express-rate-limit@8.6.1

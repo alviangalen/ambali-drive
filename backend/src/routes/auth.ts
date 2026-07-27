@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 import prisma from '../lib/prisma.js';
 import { verifyGoogleToken } from '../lib/firebase.js';
 
@@ -8,8 +9,10 @@ const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 
 // Helper to generate token
-const generateToken = (userId: string) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
+const generateToken = (userId: string, sessionId?: string) => {
+  const payload: any = { userId };
+  if (sessionId) payload.sessionId = sessionId;
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 };
 
 // Register
@@ -28,11 +31,12 @@ router.post('/register', async (req: Request, res: Response): Promise<any> => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
+    const sessionId = uuidv4();
     const user = await prisma.user.create({
-      data: { name, email, passwordHash }
+      data: { name, email, passwordHash, sessionId }
     });
 
-    const token = generateToken(user.id);
+    const token = generateToken(user.id, sessionId);
     res.status(201).json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (error) {
     console.error('Register error:', error);
@@ -48,17 +52,25 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
       return res.status(400).json({ error: 'Missing fields' });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    let user = await prisma.user.findUnique({ where: { email } });
     if (!user || !user.passwordHash) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
+    if (user.isBlocked) {
+      return res.status(403).json({ error: 'Your account has been blocked by an administrator.' });
+    }
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    const token = generateToken(user.id);
+    const sessionId = uuidv4();
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { sessionId }
+    });
+    const token = generateToken(user.id, sessionId);
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (error) {
     console.error('Login error:', error);
@@ -82,6 +94,9 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
     }
 
     let user = await prisma.user.findUnique({ where: { email } });
+    if (user?.isBlocked) {
+      return res.status(403).json({ error: 'Your account has been blocked by an administrator.' });
+    }
     if (!user) {
       // Register via Google if not exists
       user = await prisma.user.create({
@@ -93,7 +108,12 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
       });
     }
 
-    const token = generateToken(user.id);
+    const sessionId = uuidv4();
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { sessionId }
+    });
+    const token = generateToken(user.id, sessionId);
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (error) {
     console.error('Google Login error:', error);

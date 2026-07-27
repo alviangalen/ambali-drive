@@ -139,3 +139,48 @@ export async function getStorageUsed() {
   if (!res.ok) throw new Error('Failed to fetch storage');
   return res.json();
 }
+
+// --- Admin API ---
+export async function getAdminUsers() {
+  const res = await fetch('/api/admin/users', { headers: getHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch users');
+  return res.json();
+}
+
+export async function blockUser(id: string, isBlocked: boolean) {
+  const res = await fetch(`/api/admin/users/${id}/block`, {
+    method: 'PUT',
+    headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isBlocked })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update user');
+  }
+  return res.json();
+}
+
+export async function getAdminLogs() {
+  const res = await fetch('/api/admin/logs', { headers: getHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch logs');
+  return res.json();
+}
+
+export async function getAdminStats() {
+  const res = await fetch('/api/admin/stats', { headers: getHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch stats');
+  return res.json();
+}
+
+export async function changeAdminPassword(oldPassword: string, newPassword: string) {
+  const res = await fetch('/api/admin/change-password', {
+    method: 'PUT',
+    headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ oldPassword, newPassword })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to change password');
+  }
+  return res.json();
+}

@@ -14,10 +14,13 @@ model User {
   role         String      @default("user")
   storageQuota BigInt      @default(16106127360) // 15GB in bytes
   storageUsed  BigInt      @default(0)
+  isBlocked    Boolean     @default(false)
+  sessionId    String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   files        File[]
   shares       FileShare[]
+  auditLogs    AuditLog[]  @relation("AdminLogs")
 }
 
 model File {
@@ -61,4 +64,15 @@ model PublicLink {
   expiresAt     DateTime?
   allowDownload Boolean   @default(true)
   createdAt     DateTime  @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  admin     User     @relation("AdminLogs", fields: [adminId], references: [id])
+  action    String
+  targetId  String?
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
 }

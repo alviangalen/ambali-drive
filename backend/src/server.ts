@@ -1,4 +1,7 @@
 import express from 'express';
+import helmet from 'helmet';
+import bcrypt from 'bcryptjs';
+import prisma from './lib/prisma.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -15,10 +18,46 @@ dotenv.config(); // For production if .env is in same dir
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+
+// Seed Admin Account
+const seedAdmin = async () => {
+  try {
+    const adminEmail = 'admin@ambali.site';
+    const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
+    if (!existing) {
+      const passwordHash = await bcrypt.hash('adminambali', 10);
+      await prisma.user.create({
+        data: {
+          name: 'Super Admin',
+          email: adminEmail,
+          passwordHash,
+          role: 'admin'
+        }
+      });
+      console.log('Seeded super admin account.');
+    }
+  } catch (err) {
+    console.error('Failed to seed admin', err);
+  }
+};
+seedAdmin();
+
 const app = express();
 const port = process.env.PORT || 8000;
 
 app.use(cors());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https://*"],
+      connectSrc: ["'self'", "https://*"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+    },
+  },
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -29,11 +68,13 @@ app.use(express.static(frontendPath));
 import authRoutes from './routes/auth.js';
 import filesRoutes from './routes/files.js';
 import shareRoutes from './routes/share.js';
+import adminRoutes from './routes/admin.js';
 
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/files', filesRoutes);
 app.use('/api/share', shareRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
