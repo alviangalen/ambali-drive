@@ -81,6 +81,13 @@ router.post('/upload', authenticate, upload.single('file'), async (req: AuthRequ
 
     if (!file) return res.status(400).json({ error: 'No file uploaded' });
 
+    if (req.aborted || req.socket.destroyed) {
+      if (file.path) {
+        fs.unlink(file.path, () => {});
+      }
+      return res.status(400).json({ error: 'Upload canceled by client' });
+    }
+
     // Determine type by mimetype loosely
     let type = 'file';
     if (file.mimetype?.startsWith('image/')) type = 'image';

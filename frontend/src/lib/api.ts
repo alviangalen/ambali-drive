@@ -28,7 +28,7 @@ export async function createFolder(name: string, parentId: string | null = null)
   return res.json();
 }
 
-export function uploadFile(file: File, parentId: string | null = null, onProgress?: (pct: number) => void): Promise<any> {
+export function uploadFile(file: File, parentId: string | null = null, onProgress?: (pct: number) => void, signal?: AbortSignal): Promise<any> {
   return new Promise((resolve, reject) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -42,7 +42,19 @@ export function uploadFile(file: File, parentId: string | null = null, onProgres
       xhr.setRequestHeader(key, headers[key as keyof typeof headers]);
     });
 
+    if (signal) {
+      if (signal.aborted) {
+        reject(new Error('Upload canceled'));
+        return;
+      }
+      signal.addEventListener('abort', () => {
+        xhr.abort();
+        reject(new Error('Upload canceled'));
+      });
+    }
+
     xhr.upload.onprogress = (e) => {
+      if (signal?.aborted) return;
       if (e.lengthComputable && onProgress) {
         const pct = Math.round((e.loaded / e.total) * 100);
         onProgress(pct);
