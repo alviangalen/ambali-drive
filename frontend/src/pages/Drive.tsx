@@ -1135,7 +1135,7 @@ export default function Drive() {
                   {recentItems.map(item => (
                     <button
                       key={item.id}
-                      onClick={e => { e.stopPropagation(); setPreviewItem(item) }}
+                      onDoubleClick={e => { e.stopPropagation(); setPreviewItem(item) }}
                       className="group flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-100 transition-all text-center"
                     >
                       {item.type === 'image' && item.thumbnailUrl ? (
@@ -1289,11 +1289,12 @@ function FileGrid({ items, allItems, selected, section, onSelect, onOpen, onCtx,
   const folders = items.filter(i => i.type === 'folder')
   const files = items.filter(i => i.type !== 'folder')
 
-  const ItemCard = ({ item }: { item: DriveItem }) => {
+  const renderItemCard = (item: DriveItem) => {
     const isSelected = selected.has(item.id)
     const isImg = item.type === 'image' && item.thumbnailUrl
     return (
       <div
+        key={item.id}
         onContextMenu={e => onCtx(e, item.id)}
         onClick={e => {
           e.stopPropagation();
@@ -1372,7 +1373,7 @@ function FileGrid({ items, allItems, selected, section, onSelect, onOpen, onCtx,
         <div className="mb-5">
           {files.length > 0 && <h4 className="text-xs font-medium text-gray-400 mb-2.5 uppercase tracking-wide">Folders</h4>}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-            {folders.map(item => <ItemCard key={item.id} item={item} />)}
+            {folders.map(item => renderItemCard(item))}
           </div>
         </div>
       )}
@@ -1380,7 +1381,7 @@ function FileGrid({ items, allItems, selected, section, onSelect, onOpen, onCtx,
         <div>
           {folders.length > 0 && <h4 className="text-xs font-medium text-gray-400 mb-2.5 uppercase tracking-wide">Files</h4>}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-            {files.map(item => <ItemCard key={item.id} item={item} />)}
+            {files.map(item => renderItemCard(item))}
           </div>
         </div>
       )}
