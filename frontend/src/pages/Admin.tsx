@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users, Activity, Lock, Search, Ban, CheckCircle, Database } from 'lucide-react';
+import { Shield, Users, Activity, Lock, Search, Ban, CheckCircle, Database, LogOut } from 'lucide-react';
 import { getAdminUsers, blockUser, getAdminLogs, getAdminStats, changeAdminPassword } from '../lib/api';
 import { useAuthStore } from '../store/authStore';
 
@@ -92,9 +92,16 @@ export default function Admin() {
           </button>
         </nav>
         
-        <div className="mt-auto pt-6 border-t border-white/10">
-          <button onClick={() => navigate('/drive')} className="text-sm text-blue-200 hover:text-white transition-colors">
+        <div className="mt-auto pt-6 border-t border-white/10 flex flex-col gap-3">
+          <button onClick={() => navigate('/drive')} className="text-sm text-left text-blue-200 hover:text-white transition-colors">
             &larr; Back to Drive
+          </button>
+          <button 
+            onClick={() => useAuthStore.getState().logout()} 
+            className="flex items-center gap-2 px-3 py-2 -ml-3 rounded-lg text-sm font-medium text-red-200 hover:bg-red-500/20 hover:text-white transition-colors"
+          >
+            <LogOut size={16} />
+            Logout Account
           </button>
         </div>
       </div>

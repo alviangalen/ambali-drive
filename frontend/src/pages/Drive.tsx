@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo, useLayoutEffect } from 'react'
 import {
-  Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Bell, ChevronDown, Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, CheckCircle2
+  Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Shield, Bell, ChevronDown, Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, CheckCircle2, LogOut
 } from 'lucide-react'
 import ambaliLogo from '@/imports/ambalilogocrop-removebg-preview.png'
 import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, copyFile, createShareLink, removeShareLink, getStorageUsed } from '../lib/api'
@@ -745,6 +745,7 @@ export default function Drive() {
   const [folderId, setFolderId] = useState<string | null>(null)
   const [folderHistory, setFolderHistory] = useState<{id: string, name: string}[]>([])
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const logout = useAuthStore(s => s.logout)
   const user = useAuthStore(s => s.user)
 
@@ -1110,9 +1111,32 @@ export default function Drive() {
             <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600" title="Notifications">
               <Bell size={17} />
             </button>
-            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600" title="Settings">
-              <Settings size={17} />
-            </button>
+            <div className="relative">
+              <button 
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600 focus:outline-none" 
+                title="Settings"
+                onClick={() => setSettingsOpen(!settingsOpen)}
+              >
+                <Settings size={17} />
+              </button>
+              {settingsOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setSettingsOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 overflow-hidden">
+                    {user?.role === 'admin' && (
+                      <button onClick={() => { setSettingsOpen(false); window.location.href = '/admin'; }} className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2.5 transition-colors">
+                        <Shield size={16} className="text-gray-400" />
+                        Admin Panel
+                      </button>
+                    )}
+                    <button onClick={() => { setSettingsOpen(false); logout(); }} className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-2.5 transition-colors">
+                      <LogOut size={16} className="text-red-500" />
+                      Logout
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
             <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600" title="Help">
               <HelpCircle size={17} />
             </button>
