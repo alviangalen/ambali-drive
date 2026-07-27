@@ -30,7 +30,7 @@ services:
       - VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID:-dummy_project_id}
       - VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID:-dummy_app_id}
     volumes:
-      - ./storage:/app/storage # Menyimpan file asli di hardisk
+      - /mnt/storage/ambali-drive-storage:/app/storage # Menyimpan file asli di hardisk yang berkapasitas besar
     networks:
       - ambali_network
     depends_on:
