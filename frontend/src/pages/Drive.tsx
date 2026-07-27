@@ -3,7 +3,7 @@ import {
   Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, X, Copy, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Bell, ChevronDown, Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, CheckCircle2
 } from 'lucide-react'
 import ambaliLogo from '@/imports/ambalilogocrop-removebg-preview.png'
-import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, createShareLink, removeShareLink } from '../lib/api'
+import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, createShareLink, removeShareLink, getStorageUsed } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -284,6 +284,7 @@ function ShareModal({ item, onClose, onUpdate }: { item: DriveItem; onClose: () 
   const changeRole = (id: string, role: Role) => setShared(s => s.map(u => u.id === id ? { ...u, role } : u))
 
   const copyLink = () => {
+    navigator.clipboard.writeText(link.url);
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -713,7 +714,7 @@ function ContextMenu({
 export default function Drive() {
   const QUOTA = 15 * 1024 ** 3;
   const [items, setItems] = useState<DriveItem[]>([])
-  const USED_BYTES = items.reduce((acc, i) => acc + i.size, 0);
+  const [USED_BYTES, setUsedBytes] = useState(0);
   const [loadingItems, setLoadingItems] = useState(false)
   const [section, setSection] = useState<NavSection>('myDrive')
   const [folderId, setFolderId] = useState<string | null>(null)
@@ -726,6 +727,7 @@ export default function Drive() {
     try {
       setLoadingItems(true)
       const data = await fetchFiles(folderId, section === 'trash')
+      getStorageUsed().then(s => setUsedBytes(s.used)).catch(console.error)
       // Map API files to DriveItem interface
       const mapped = data.map((f: any) => ({
         id: f.id, name: f.name, type: f.type, size: Number(f.size),

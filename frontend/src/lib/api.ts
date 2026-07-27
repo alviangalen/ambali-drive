@@ -120,3 +120,9 @@ export async function getPublicFile(hash: string, password?: string) {
   }
   return res.json();
 }
+
+export async function getStorageUsed() {
+  const res = await fetch('/api/files/storage', { headers: getHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch storage');
+  return res.json();
+}
