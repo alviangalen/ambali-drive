@@ -333,7 +333,11 @@ router.get('/:id/download', authenticate, async (req: AuthRequest, res: Response
       return res.status(404).json({ error: 'Physical file missing' });
     }
 
-    res.download(filePath, file.name);
+    if (req.query.preview === 'true') {
+      res.sendFile(filePath);
+    } else {
+      res.download(filePath, file.name);
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to download file' });

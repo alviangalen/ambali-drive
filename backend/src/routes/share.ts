@@ -152,7 +152,11 @@ router.get('/public/:hash/download', async (req, res): Promise<any> => {
       return res.status(404).json({ error: 'Physical file missing' });
     }
 
-    res.download(filePath, link.file.name);
+    if (req.query.preview === 'true') {
+      res.sendFile(filePath);
+    } else {
+      res.download(filePath, link.file.name);
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to download public file' });

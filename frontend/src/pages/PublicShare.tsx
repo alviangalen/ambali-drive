@@ -134,9 +134,13 @@ export default function PublicShare() {
       </header>
       <main className="flex-1 flex items-center justify-center p-6 relative overflow-hidden">
         {file.type === 'image' ? (
-          <img src={`/api/share/public/${hash}/download${password ? '?password='+encodeURIComponent(password) : ''}`} alt={file.name} className="max-w-full max-h-full object-contain drop-shadow-2xl" />
+          <img src={`/api/share/public/${hash}/download?preview=true${password ? '&password='+encodeURIComponent(password) : ''}`} alt={file.name} className="max-w-full max-h-full object-contain drop-shadow-2xl" />
         ) : file.type === 'video' ? (
-          <video src={`/api/share/public/${hash}/download${password ? '?password='+encodeURIComponent(password) : ''}`} controls className="max-w-full max-h-full rounded-lg shadow-2xl" />
+          <video src={`/api/share/public/${hash}/download?preview=true${password ? '&password='+encodeURIComponent(password) : ''}`} controls autoPlay className="max-w-full max-h-full rounded-lg shadow-2xl" />
+        ) : file.type === 'audio' ? (
+          <audio src={`/api/share/public/${hash}/download?preview=true${password ? '&password='+encodeURIComponent(password) : ''}`} controls autoPlay className="w-96" />
+        ) : file.type === 'pdf' ? (
+          <iframe src={`/api/share/public/${hash}/download?preview=true${password ? '&password='+encodeURIComponent(password) : ''}#toolbar=0&view=FitH`} className="w-full max-w-4xl h-[75vh] rounded-xl bg-white" title={file.name} />
         ) : (
           <div className="flex flex-col items-center gap-4">
             <div className="w-32 h-32 bg-white/5 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/10">

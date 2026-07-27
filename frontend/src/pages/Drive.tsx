@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo, useLayoutEffect } from 'react'
 import {
-  Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, User, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Shield, Bell, ChevronDown, Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, CheckCircle2, LogOut
+  Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, User, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Shield, Bell, ChevronDown, CheckCircle2, LogOut
 } from 'lucide-react'
 import ambaliLogo from '@/imports/ambalilogocrop-removebg-preview.png'
 import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, copyFile, createShareLink, removeShareLink, getStorageUsed, updateProfile } from '../lib/api'
@@ -92,8 +92,8 @@ function PreviewModal({ item, siblings, onClose, onDownload }: { item: DriveItem
   const idx = imgSiblings.findIndex(s => s.id === item.id)
   const [current, setCurrent] = useState(item)
   const [zoom, setZoom] = useState(1)
-  const [playing, setPlaying] = useState(false)
-  const [muted, setMuted] = useState(false)
+  const token = useAuthStore.getState().token;
+  const previewUrl = `/api/files/${current.id}/download?preview=true&token=${token}`;
 
   const prev = () => {
     const newIdx = (imgSiblings.findIndex(s => s.id === current.id) - 1 + imgSiblings.length) % imgSiblings.length
@@ -168,28 +168,17 @@ function PreviewModal({ item, siblings, onClose, onDownload }: { item: DriveItem
           </div>
         )}
         {current.type === 'video' && (
-          <div className="flex flex-col items-center gap-6">
-            <div className="w-full max-w-2xl aspect-video bg-gray-900 rounded-xl flex items-center justify-center border border-white/10">
-              <div className="text-center text-white/40">
-                <FileVideo size={56} strokeWidth={1} className="mx-auto mb-3" />
-                <p className="text-sm">Video preview</p>
-                <p className="text-xs text-white/25 mt-1">{current.name}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 text-white/70">
-              <button className="p-2 hover:text-white transition-colors"><SkipBack size={18} /></button>
-              <button onClick={() => setPlaying(!playing)} className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
-                {playing ? <Pause size={20} /> : <Play size={20} />}
-              </button>
-              <button className="p-2 hover:text-white transition-colors"><SkipForward size={18} /></button>
-              <button onClick={() => setMuted(!muted)} className="p-2 hover:text-white transition-colors">
-                {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-              </button>
-            </div>
+          <div className="flex flex-col items-center gap-4 w-full h-full justify-center" onClick={e => e.stopPropagation()}>
+            <video
+              src={previewUrl}
+              controls
+              autoPlay
+              className="max-w-full max-h-[75vh] bg-black rounded-lg shadow-2xl"
+            />
           </div>
         )}
         {current.type === 'audio' && (
-          <div className="flex flex-col items-center gap-6">
+          <div className="flex flex-col items-center gap-6 w-full h-full justify-center" onClick={e => e.stopPropagation()}>
             <div className="w-64 h-64 bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-2xl border border-white/10 flex items-center justify-center">
               <Music size={72} color="#EC4899" strokeWidth={1} />
             </div>
@@ -197,27 +186,16 @@ function PreviewModal({ item, siblings, onClose, onDownload }: { item: DriveItem
               <p className="text-white font-medium">{current.name}</p>
               <p className="text-white/40 text-sm mt-1">{fmtBytes(current.size)}</p>
             </div>
-            <div className="flex items-center gap-4 text-white/70">
-              <button className="p-2 hover:text-white transition-colors"><SkipBack size={18} /></button>
-              <button onClick={() => setPlaying(!playing)} className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
-                {playing ? <Pause size={20} /> : <Play size={20} />}
-              </button>
-              <button className="p-2 hover:text-white transition-colors"><SkipForward size={18} /></button>
-            </div>
+            <audio src={previewUrl} controls autoPlay className="w-96" />
           </div>
         )}
         {current.type === 'pdf' && (
-          <div className="flex flex-col items-center gap-4 w-full">
-            <div className="w-full max-w-2xl h-[60vh] bg-white rounded-xl flex items-center justify-center border border-white/10">
-              <div className="text-center text-gray-400">
-                <FileText size={56} strokeWidth={1} color="#EF4444" className="mx-auto mb-3" />
-                <p className="text-sm text-gray-500">PDF Preview</p>
-                <p className="text-xs text-gray-400 mt-1">{current.name}</p>
-                <button onClick={() => onDownload(current.id, current.name)} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto">
-                  <Download size={14} /> Download to view
-                </button>
-              </div>
-            </div>
+          <div className="flex flex-col items-center w-full h-full justify-center" onClick={e => e.stopPropagation()}>
+            <iframe
+              src={`${previewUrl}#toolbar=0&view=FitH`}
+              className="w-full max-w-4xl h-[75vh] rounded-xl bg-white"
+              title={current.name}
+            />
           </div>
         )}
         { !['image', 'video', 'audio', 'pdf'].includes(current.type) && (
