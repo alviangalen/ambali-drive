@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users, Activity, Lock, Search, Ban, CheckCircle, Database, LogOut } from 'lucide-react';
-import { getAdminUsers, blockUser, getAdminLogs, getAdminStats, changeAdminPassword } from '../lib/api';
+import { Shield, Users, Activity, Lock, Search, Ban, CheckCircle, Database, LogOut, Pencil } from 'lucide-react';
+import { getAdminUsers, blockUser, getAdminLogs, getAdminStats, changeAdminPassword, updateUserQuota } from '../lib/api';
 import { useAuthStore } from '../store/authStore';
 
 export default function Admin() {
@@ -38,6 +38,27 @@ export default function Admin() {
       alert('Failed to load admin data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  
+  const handleQuotaUpdate = async (id: string, currentQuota: number) => {
+    const currentGB = currentQuota / (1024 ** 3);
+    const newGBStr = prompt('Enter new storage quota in GB:', currentGB.toString());
+    if (newGBStr === null) return; // Cancelled
+    
+    const newGB = parseFloat(newGBStr);
+    if (isNaN(newGB) || newGB < 0) {
+      alert('Invalid quota value. Please enter a positive number.');
+      return;
+    }
+    
+    const newBytes = newGB * (1024 ** 3);
+    try {
+      await updateUserQuota(id, newBytes);
+      setUsers(users.map(u => u.id === id ? { ...u, storageQuota: newBytes } : u));
+    } catch (e: any) {
+      alert(e.message);
     }
   };
 
@@ -173,6 +194,13 @@ export default function Admin() {
                     </td>
                     <td className="px-6 py-4 text-gray-500 text-sm">
                       {formatBytes(u.storageUsed)} / {formatBytes(u.storageQuota)}
+                      <button 
+                        onClick={() => handleQuotaUpdate(u.id, u.storageQuota)}
+                        className="ml-2 p-1 text-gray-400 hover:text-[#1054A0] transition-colors rounded hover:bg-blue-50"
+                        title="Edit Quota"
+                      >
+                        <Pencil size={12} />
+                      </button>
                     </td>
                     <td className="px-6 py-4">
                       {u.isBlocked ? (

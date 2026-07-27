@@ -160,6 +160,19 @@ export async function blockUser(id: string, isBlocked: boolean) {
   return res.json();
 }
 
+export async function updateUserQuota(id: string, quotaBytes: number) {
+  const res = await fetch(`/api/admin/users/${id}/quota`, {
+    method: 'PUT',
+    headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quotaBytes })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update user quota');
+  }
+  return res.json();
+}
+
 export async function getAdminLogs() {
   const res = await fetch('/api/admin/logs', { headers: getHeaders() });
   if (!res.ok) throw new Error('Failed to fetch logs');

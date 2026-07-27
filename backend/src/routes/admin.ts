@@ -80,6 +80,36 @@ router.put('/users/:id/block', async (req: AuthRequest, res: Response): Promise<
   }
 });
 
+// PUT /users/:id/quota - Update user storage quota
+router.put('/users/:id/quota', async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const { id } = req.params;
+    const { quotaBytes } = req.body;
+    
+    if (typeof quotaBytes !== 'number' || quotaBytes < 0) {
+      return res.status(400).json({ error: 'Invalid quota value' });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: id as string },
+      data: { storageQuota: BigInt(quotaBytes) }
+    });
+
+    await logAudit(
+      req.user!.userId, 
+      'UPDATE_QUOTA', 
+      user.id, 
+      `User ${user.email} quota updated to ${quotaBytes} bytes`, 
+      req.ip
+    );
+
+    res.json({ success: true, storageQuota: Number(user.storageQuota) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update user quota' });
+  }
+});
+
 // GET /logs - Get audit logs
 router.get('/logs', async (req: AuthRequest, res: Response) => {
   try {
