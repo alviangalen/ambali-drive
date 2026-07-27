@@ -47,14 +47,18 @@ const port = process.env.PORT || 8000;
 
 app.use(cors());
 app.use(helmet({
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      upgradeInsecureRequests: null,
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://apis.google.com", "https://www.gstatic.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "blob:", "https://*"],
-      connectSrc: ["'self'", "https://*"],
+      connectSrc: ["'self'", "https://*", "wss://*"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      frameSrc: ["'self'", "https://*.firebaseapp.com", "https://*.firebaseapp.com/"],
     },
   },
 }));
