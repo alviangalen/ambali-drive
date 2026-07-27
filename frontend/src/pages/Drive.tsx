@@ -87,7 +87,7 @@ function Modal({ onClose, children, width = 'max-w-lg' }: { onClose: () => void;
 }
 
 // ─── Preview Modal ────────────────────────────────────────────────────────────
-function PreviewModal({ item, siblings, onClose }: { item: DriveItem; siblings: DriveItem[]; onClose: () => void }) {
+function PreviewModal({ item, siblings, onClose, onDownload }: { item: DriveItem; siblings: DriveItem[]; onClose: () => void; onDownload: (id: string, name: string) => void }) {
   const imgSiblings = siblings.filter(s => s.type === 'image')
   const idx = imgSiblings.findIndex(s => s.id === item.id)
   const [current, setCurrent] = useState(item)
@@ -213,7 +213,21 @@ function PreviewModal({ item, siblings, onClose }: { item: DriveItem; siblings: 
                 <FileText size={56} strokeWidth={1} color="#EF4444" className="mx-auto mb-3" />
                 <p className="text-sm text-gray-500">PDF Preview</p>
                 <p className="text-xs text-gray-400 mt-1">{current.name}</p>
-                <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto">
+                <button onClick={() => onDownload(current.id, current.name)} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto">
+                  <Download size={14} /> Download to view
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        { !['image', 'video', 'audio', 'pdf'].includes(current.type) && (
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-full max-w-2xl h-[60vh] bg-white rounded-xl flex items-center justify-center border border-white/10">
+              <div className="text-center text-gray-400">
+                <FileText size={56} strokeWidth={1} color="#6B7280" className="mx-auto mb-3" />
+                <p className="text-sm text-gray-500">No preview available</p>
+                <p className="text-xs text-gray-400 mt-1">{current.name}</p>
+                <button onClick={() => onDownload(current.id, current.name)} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto">
                   <Download size={14} /> Download to view
                 </button>
               </div>
@@ -613,11 +627,12 @@ function UploadToast({ files, onDone }: { files: UploadItem[]; onDone: () => voi
 
 // ─── Context Menu ─────────────────────────────────────────────────────────────
 function ContextMenu({
-  ctx, item, section, onClose, onPreview, onStar, onShare, onRename, onMove, onTrash, onRestore, onDelete
+  ctx, item, section, onClose, onPreview, onStar, onShare, onRename, onMove, onTrash, onRestore, onDelete, onDownload
 }: {
-  ctx: CtxMenu; item: DriveItem; section: NavSection; onClose: () => void
-  onPreview: () => void; onStar: () => void; onShare: () => void; onRename: () => void
-  onMove: () => void; onTrash: () => void; onRestore: () => void; onDelete: () => void
+  ctx: CtxMenu; item: DriveItem; section: NavSection; onClose: () => void;
+  onPreview: () => void; onStar: () => void; onShare: () => void;
+  onRename: () => void; onMove: () => void; onTrash: () => void;
+  onRestore: () => void; onDelete: () => void; onDownload: () => void;
 }) {
   const menuRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -656,7 +671,7 @@ function ContextMenu({
           {item.type !== 'folder' && (
             <MenuItem icon={Eye} label="Preview" onClick={onPreview} />
           )}
-          <MenuItem icon={Download} label="Download" onClick={() => {}} />
+          <MenuItem icon={Download} label="Download" onClick={() => { onDownload(); onClose(); }} />
           <div className="h-px bg-gray-100 my-1" />
           <MenuItem icon={Star} label={item.starred ? 'Remove from starred' : 'Add to starred'} onClick={onStar} />
           <MenuItem icon={Share2} label="Share" onClick={onShare} />
@@ -680,7 +695,7 @@ export default function Drive() {
   const [loadingItems, setLoadingItems] = useState(false)
   const [section, setSection] = useState<NavSection>('myDrive')
   const [folderId, setFolderId] = useState<string | null>(null)
-  const [folderHistory, setFolderHistory] = useState<string[]>([])
+  const [folderHistory, setFolderHistory] = useState<{id: string, name: string}[]>([])
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const logout = useAuthStore(s => s.logout)
   const user = useAuthStore(s => s.user)
@@ -695,7 +710,7 @@ export default function Drive() {
         modified: f.updatedAt, starred: f.isStarred, trashed: f.isTrashed,
         trashedAt: f.trashedAt, parentId: f.parentId, sharedWith: [],
         shareLink: f.publicLink, owner: f.ownerId,
-        thumbnailUrl: f.type === 'image' ? `/api/files/${f.id}/download` : undefined
+        thumbnailUrl: f.type === 'image' ? `/api/files/${f.id}/download?token=${useAuthStore.getState().token}` : undefined
       }))
       setItems(mapped)
     } catch (err) {
@@ -765,9 +780,32 @@ export default function Drive() {
   }, [folderId, items])
 
   // Actions
+  const downloadFile = (fileId: string, fileName: string) => {
+    const token = useAuthStore.getState().token;
+    fetch(`/api/files/${fileId}/download?token=${token}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Download failed');
+        return res.blob();
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      })
+      .catch(err => {
+        console.error('Download error:', err);
+        alert('Failed to download file');
+      });
+  };
+
   const openFolder = (id: string) => {
-    if (folderId) setFolderHistory(h => [...h, folderId])
-    else setFolderHistory(h => [...h, ''])
+    if (folderId) setFolderHistory(h => [...h, { id: folderId, name: items.find(i => i.id === folderId)?.name || 'Folder' }])
+    // Removed invalid history assignment
     setFolderId(id)
     setSelected(new Set())
     setSection('myDrive')
@@ -1179,6 +1217,7 @@ export default function Drive() {
           onTrash={() => trashItem(ctxItem.id)}
           onRestore={() => restoreItem(ctxItem.id)}
           onDelete={() => deleteItem(ctxItem.id)}
+          onDownload={() => downloadFile(ctxItem.id, items.find(i => i.id === ctxItem.id)?.name || "file")}
         />
       )}
 
@@ -1188,6 +1227,7 @@ export default function Drive() {
           item={previewItem}
           siblings={items.filter(i => i.parentId === previewItem.parentId && !i.trashed)}
           onClose={() => setPreviewItem(null)}
+          onDownload={downloadFile}
         />
       )}
       {shareItem && (
