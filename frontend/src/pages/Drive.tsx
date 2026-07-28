@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo, useLayoutEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, User, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Shield, Bell, ChevronDown, CheckCircle2, LogOut
 } from 'lucide-react'
@@ -732,17 +733,21 @@ export default function Drive() {
   const [items, setItems] = useState<DriveItem[]>([])
   const [USED_BYTES, setUsedBytes] = useState(0);
   const [loadingItems, setLoadingItems] = useState(false)
-  const [section, setSection] = useState<NavSection>(() => (sessionStorage.getItem('drive_section') as NavSection) || 'myDrive')
-  const [folderId, setFolderId] = useState<string | null>(() => sessionStorage.getItem('drive_folder') || null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const section = (searchParams.get('section') as NavSection) || 'myDrive'
+  const folderId = searchParams.get('folder') || null
 
-  useEffect(() => {
-    sessionStorage.setItem('drive_section', section);
-  }, [section]);
-
-  useEffect(() => {
-    if (folderId) sessionStorage.setItem('drive_folder', folderId);
-    else sessionStorage.removeItem('drive_folder');
-  }, [folderId]);
+  const updateDriveState = useCallback((opts: { s?: NavSection, fId?: string | null }, replace = false) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (opts.s !== undefined) next.set('section', opts.s);
+      if (opts.fId !== undefined) {
+        if (opts.fId) next.set('folder', opts.fId);
+        else next.delete('folder');
+      }
+      return next;
+    }, { replace });
+  }, [setSearchParams]);
   const [folderHistory, setFolderHistory] = useState<{id: string, name: string}[]>([])
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -754,7 +759,7 @@ export default function Drive() {
     try {
       setItems([])
       setLoadingItems(true)
-      const data = await fetchFiles(folderId, section === 'trash')
+      const data = await fetchFiles(folderId, section === 'trash', section !== 'myDrive')
       getStorageUsed().then(s => { setUsedBytes(s.used); if (s.quota) setQuota(s.quota); }).catch(console.error)
       // Map API files to DriveItem interface
       const mapped = data.map((f: any) => ({
@@ -870,12 +875,11 @@ export default function Drive() {
       if (h.length > 0 && h[h.length - 1].id === id) return h;
       return [...h, { id, name }];
     })
-    setFolderId(id)
+    updateDriveState({ s: 'myDrive', fId: id });
     setSelected(new Set())
-    setSection('myDrive')
   }
   const navigateTo = (id: string | null) => {
-    setFolderId(id)
+    updateDriveState({ fId: id });
     if (!id) setFolderHistory([])
     else {
       setFolderHistory(h => {
@@ -886,8 +890,7 @@ export default function Drive() {
     setSelected(new Set())
   }
   const navigateSection = (s: NavSection) => {
-    setSection(s)
-    setFolderId(null)
+    updateDriveState({ s, fId: null });
     setFolderHistory([])
     setSelected(new Set())
     setSearch('')

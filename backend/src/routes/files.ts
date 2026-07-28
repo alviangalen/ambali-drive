@@ -126,11 +126,12 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<a
     const userId = req.user!.userId;
     const parentId = req.query.parentId as string;
     const isTrashed = req.query.trashed === 'true';
+    const all = req.query.all === 'true';
 
     const files = await prisma.file.findMany({
       where: {
         ownerId: userId,
-        parentId: isTrashed ? undefined : (parentId || null),
+        parentId: (isTrashed || all) ? undefined : (parentId || null),
         isTrashed
       },
       orderBy: [

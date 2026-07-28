@@ -9,9 +9,10 @@ function getHeaders() {
   };
 }
 
-export async function fetchFiles(parentId: string | null = null, trashed: boolean = false) {
+export async function fetchFiles(parentId: string | null = null, trashed: boolean = false, all: boolean = false) {
   let url = `${BASE_URL}?trashed=${trashed}`;
-  if (parentId) url += `&parentId=${parentId}`;
+  if (parentId && !all) url += `&parentId=${parentId}`;
+  if (all) url += `&all=true`;
   
   const res = await fetch(url, { headers: getHeaders() });
   if (!res.ok) throw new Error('Failed to fetch files');
