@@ -30,7 +30,7 @@ services:
       - VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID:-dummy_project_id}
       - VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID:-dummy_app_id}
     volumes:
-      - /mnt/storage/ambali-drive-storage:/app/storage # Menyimpan file asli di hardisk yang berkapasitas besar
+      - /mnt/storage/ambali-drive-storage:/app/storage 
     networks:
       - ambali_network
     depends_on:
@@ -46,11 +46,9 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres_default_pw}
     volumes:
-      - ambali_db_data:/var/lib/postgresql/data # Agar data akun tidak hilang saat container mati
+      - ambali_db_data:/var/lib/postgresql/data 
     networks:
       - ambali_network
-    # PERHATIKAN: Tidak ada blok 'ports:' di sini. 
-    # Artinya database terisolasi, tidak bisa di-hack dari luar.
 
 networks:
   ambali_network:
