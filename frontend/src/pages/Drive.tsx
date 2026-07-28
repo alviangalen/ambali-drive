@@ -761,6 +761,7 @@ export default function Drive() {
 
   const loadData = async () => {
     try {
+      setItems([])
       setLoadingItems(true)
       const data = await fetchFiles(folderId, section === 'trash')
       getStorageUsed().then(s => { setUsedBytes(s.used); if (s.quota) setQuota(s.quota); }).catch(console.error)
@@ -874,7 +875,10 @@ export default function Drive() {
   };
 
   const openFolder = (id: string, name: string) => {
-    setFolderHistory(h => [...h, { id, name }])
+    setFolderHistory(h => {
+      if (h.length > 0 && h[h.length - 1].id === id) return h;
+      return [...h, { id, name }];
+    })
     setFolderId(id)
     setSelected(new Set())
     setSection('myDrive')
@@ -1320,7 +1324,12 @@ export default function Drive() {
             )}
 
             {/* Files */}
-            {filteredItems.length === 0 ? (
+            {loadingItems ? (
+              <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+                <div className="w-8 h-8 border-4 border-[#1054A0]/20 border-t-[#1054A0] rounded-full animate-spin mb-4"></div>
+                <p className="font-medium text-gray-500 mb-1">Loading...</p>
+              </div>
+            ) : filteredItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-gray-400">
                 {section === 'trash' ? <Trash2 size={40} strokeWidth={1} className="mb-3" /> :
                   section === 'starred' ? <Star size={40} strokeWidth={1} className="mb-3" /> :
