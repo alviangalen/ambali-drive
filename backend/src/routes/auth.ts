@@ -211,7 +211,7 @@ router.get('/sessions', authenticate, async (req: AuthRequest, res: Response): P
 router.delete('/sessions/:id', authenticate, async (req: AuthRequest, res: Response): Promise<any> => {
   try {
     const userId = req.user!.userId;
-    const sessionId = req.params.id;
+    const sessionId = req.params.id as string;
     
     // Validate ownership
     const session = await prisma.session.findUnique({ where: { id: sessionId } });
