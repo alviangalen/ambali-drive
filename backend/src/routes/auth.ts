@@ -16,6 +16,45 @@ const generateToken = (userId: string, sessionId?: string) => {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 };
 
+async function establishSession(user: any, req: Request) {
+  const sessionId = uuidv4();
+  
+  if (user.role === 'admin') {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { sessionId }
+    });
+    return sessionId;
+  } else {
+    const forwarded = req.headers['x-forwarded-for'];
+    const ipAddress = (typeof forwarded === 'string' ? forwarded.split(',')[0] : req.socket.remoteAddress) || 'Unknown';
+    const device = req.headers['user-agent'] || 'Unknown Device';
+    let location = 'Local Network';
+    
+    const isPrivate = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|127\.0\.0\.1|::1)/.test(ipAddress);
+    
+    if (!isPrivate && ipAddress !== 'Unknown') {
+      try {
+        const res = await fetch(`http://ip-api.com/json/${ipAddress}?fields=city,country,status`);
+        const data = await res.json();
+        if (data.status === 'success') {
+          location = `${data.city}, ${data.country}`;
+        }
+      } catch (e) {}
+    }
+
+    const session = await prisma.session.create({
+      data: {
+        userId: user.id,
+        ipAddress,
+        device,
+        location
+      }
+    });
+    return session.id;
+  }
+}
+
 // Register
 router.post('/register', async (req: Request, res: Response): Promise<any> => {
   try {
@@ -66,11 +105,7 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    const sessionId = uuidv4();
-    user = await prisma.user.update({
-      where: { id: user.id },
-      data: { sessionId }
-    });
+    const sessionId = await establishSession(user, req);
     const token = generateToken(user.id, sessionId);
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (error) {
@@ -109,11 +144,7 @@ router.post('/google', async (req: Request, res: Response): Promise<any> => {
       });
     }
 
-    const sessionId = uuidv4();
-    user = await prisma.user.update({
-      where: { id: user.id },
-      data: { sessionId }
-    });
+    const sessionId = await establishSession(user, req);
     const token = generateToken(user.id, sessionId);
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (error) {
@@ -158,6 +189,40 @@ router.put('/profile', authenticate, async (req: AuthRequest, res: Response): Pr
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// GET /sessions
+router.get('/sessions', authenticate, async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const userId = req.user!.userId;
+    const sessions = await prisma.session.findMany({
+      where: { userId },
+      orderBy: { lastActive: 'desc' },
+      select: { id: true, ipAddress: true, device: true, location: true, lastActive: true, createdAt: true }
+    });
+    res.json(sessions);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch sessions' });
+  }
+});
+
+// DELETE /sessions/:id
+router.delete('/sessions/:id', authenticate, async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const userId = req.user!.userId;
+    const sessionId = req.params.id;
+    
+    // Validate ownership
+    const session = await prisma.session.findUnique({ where: { id: sessionId } });
+    if (!session || session.userId !== userId) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    await prisma.session.delete({ where: { id: sessionId } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to revoke session' });
   }
 });
 

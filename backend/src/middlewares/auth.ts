@@ -39,8 +39,22 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
       return res.status(403).json({ error: 'Your account has been blocked by an administrator.' });
     }
 
-    if (dbUser.sessionId && decoded.sessionId && dbUser.sessionId !== decoded.sessionId) {
-      return res.status(401).json({ error: 'Session expired: Logged in from another device.' });
+    if (dbUser.role === 'admin') {
+      if (dbUser.sessionId && decoded.sessionId && dbUser.sessionId !== decoded.sessionId) {
+        return res.status(401).json({ error: 'Session expired: Logged in from another device.' });
+      }
+    } else {
+      if (decoded.sessionId) {
+        const session = await prisma.session.findUnique({ where: { id: decoded.sessionId } });
+        if (!session) {
+          return res.status(401).json({ error: 'Session revoked or expired.' });
+        }
+        // Update lastActive (async, fire and forget to not block request)
+        prisma.session.update({
+          where: { id: session.id },
+          data: { lastActive: new Date() }
+        }).catch(() => {});
+      }
     }
 
     req.user = { userId: decoded.userId, role: dbUser.role, sessionId: decoded.sessionId };

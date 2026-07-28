@@ -21,6 +21,18 @@ model User {
   files        File[]
   shares       FileShare[]
   auditLogs    AuditLog[]  @relation("AdminLogs")
+  sessions     Session[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress String?
+  device    String?
+  location  String?
+  lastActive DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model File {

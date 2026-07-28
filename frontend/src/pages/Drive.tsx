@@ -3,7 +3,7 @@ import {
   Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, User, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Shield, Bell, ChevronDown, CheckCircle2, LogOut
 } from 'lucide-react'
 import ambaliLogo from '@/imports/ambalilogocrop-removebg-preview.png'
-import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, copyFile, createShareLink, removeShareLink, getStorageUsed, updateProfile } from '../lib/api'
+import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, copyFile, createShareLink, removeShareLink, getStorageUsed, updateProfile, getSessions, revokeSession } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -1650,6 +1650,23 @@ function ProfileModal({ user, onClose, onUpdated }: any) {
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState<'profile'|'sessions'>('profile');
+  const [sessions, setSessions] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (activeTab === 'sessions' && user.role !== 'admin') {
+      getSessions().then(setSessions).catch(console.error);
+    }
+  }, [activeTab, user.role]);
+
+  const handleRevoke = async (id: string) => {
+    try {
+      await revokeSession(id);
+      setSessions(s => s.filter(x => x.id !== id));
+    } catch (err) {
+      alert('Failed to revoke session');
+    }
+  }
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -1677,65 +1694,89 @@ function ProfileModal({ user, onClose, onUpdated }: any) {
           </button>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-6">
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-start gap-2">
-              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-              <p>{error}</p>
-            </div>
-          )}
+        {user.role !== 'admin' && (
+          <div className="px-6 flex gap-4 border-b border-gray-100">
+            <button onClick={() => setActiveTab('profile')} className={`py-3 text-sm font-medium border-b-2 ${activeTab === 'profile' ? 'border-[#1054A0] text-[#1054A0]' : 'border-transparent text-gray-500'}`}>Profile</button>
+            <button onClick={() => setActiveTab('sessions')} className={`py-3 text-sm font-medium border-b-2 ${activeTab === 'sessions' ? 'border-[#1054A0] text-[#1054A0]' : 'border-transparent text-gray-500'}`}>Active Sessions</button>
+          </div>
+        )}
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0] transition-colors"
-                required
-              />
-            </div>
-            
-            <div className="pt-2">
-              <h3 className="text-sm font-medium text-gray-900 mb-3">Change Password (Optional)</h3>
-              <div className="space-y-3">
+        {activeTab === 'profile' ? (
+          <form onSubmit={handleSubmit} className="p-6">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-start gap-2">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <p>{error}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                 <input
-                  type="password"
-                  placeholder="Current Password"
-                  value={oldPassword}
-                  onChange={e => setOldPassword(e.target.value)}
+                  type="text"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
                   className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0] transition-colors"
-                />
-                <input
-                  type="password"
-                  placeholder="New Password"
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0] transition-colors"
+                  required
                 />
               </div>
+              
+              <div className="pt-2">
+                <h3 className="text-sm font-medium text-gray-900 mb-3">Change Password (Optional)</h3>
+                <div className="space-y-3">
+                  <input
+                    type="password"
+                    placeholder="Current Password"
+                    value={oldPassword}
+                    onChange={e => setOldPassword(e.target.value)}
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0] transition-colors"
+                  />
+                  <input
+                    type="password"
+                    placeholder="New Password"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0] transition-colors"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="mt-8 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-5 py-2 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0a4080] transition-colors shadow-sm disabled:opacity-70 flex items-center gap-2"
-            >
-              {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              Save Changes
-            </button>
+            <div className="mt-8 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-5 py-2 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0a4080] transition-colors shadow-sm disabled:opacity-70 flex items-center gap-2"
+              >
+                {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                Save Changes
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+             {sessions.length === 0 ? (
+               <p className="text-center text-gray-500 text-sm">No active sessions found.</p>
+             ) : sessions.map(s => (
+               <div key={s.id} className="p-4 border border-gray-200 rounded-xl flex items-center justify-between">
+                 <div>
+                   <p className="text-sm font-medium text-gray-900 break-all">{s.device}</p>
+                   <p className="text-xs text-gray-500 mt-1">{s.ipAddress} &bull; {s.location}</p>
+                   <p className="text-xs text-gray-400 mt-1">Last active: {new Date(s.lastActive).toLocaleString()}</p>
+                 </div>
+                 <button onClick={() => handleRevoke(s.id)} className="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 font-medium rounded-lg transition-colors ml-4 shrink-0">Revoke</button>
+               </div>
+             ))}
           </div>
-        </form>
+        )}
       </div>
     </div>
   );

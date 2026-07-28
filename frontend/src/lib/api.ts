@@ -250,3 +250,20 @@ export async function updateProfile(name?: string, oldPassword?: string, newPass
   }
   return res.json();
 }
+
+export async function getSessions() {
+  const res = await fetch('/api/auth/sessions', {
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error('Failed to fetch sessions');
+  return res.json();
+}
+
+export async function revokeSession(id: string) {
+  const res = await fetch(`/api/auth/sessions/${id}`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error('Failed to revoke session');
+  return res.json();
+}
