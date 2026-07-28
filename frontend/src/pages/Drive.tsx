@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo, useLayoutEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, User, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Shield, Bell, ChevronDown, CheckCircle2, LogOut
 } from 'lucide-react'
@@ -732,8 +733,25 @@ export default function Drive() {
   const [items, setItems] = useState<DriveItem[]>([])
   const [USED_BYTES, setUsedBytes] = useState(0);
   const [loadingItems, setLoadingItems] = useState(false)
-  const [section, setSection] = useState<NavSection>('myDrive')
-  const [folderId, setFolderId] = useState<string | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const section = (searchParams.get('section') as NavSection) || 'myDrive'
+  const folderId = searchParams.get('folder') || null
+
+  const setSection = useCallback((s: NavSection) => {
+    setSearchParams(prev => {
+      prev.set('section', s);
+      prev.delete('folder');
+      return prev;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const setFolderId = useCallback((id: string | null) => {
+    setSearchParams(prev => {
+      if (id) prev.set('folder', id);
+      else prev.delete('folder');
+      return prev;
+    });
+  }, [setSearchParams]);
   const [folderHistory, setFolderHistory] = useState<{id: string, name: string}[]>([])
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -776,6 +794,19 @@ export default function Drive() {
   const [isDragging, setIsDragging] = useState(false)
   const [uploads, setUploads] = useState<UploadItem[] | null>(null)
   useEffect(() => { uploadsRef.current = uploads; }, [uploads])
+
+  // Prevent accidental navigation/reload when uploading
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (uploads && uploads.some(i => !i.done && !i.error)) {
+        e.preventDefault();
+        e.returnValue = 'You have active uploads. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [uploads]);
   const [ctx, setCtx] = useState<CtxMenu | null>(null)
   const [newMenu, setNewMenu] = useState(false)
 
