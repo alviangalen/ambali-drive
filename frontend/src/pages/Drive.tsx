@@ -740,7 +740,6 @@ export default function Drive() {
   const setSection = useCallback((s: NavSection) => {
     setSearchParams(prev => {
       prev.set('section', s);
-      prev.delete('folder');
       return prev;
     }, { replace: true });
   }, [setSearchParams]);
@@ -896,7 +895,8 @@ export default function Drive() {
   }
   const navigateSection = (s: NavSection) => {
     setSection(s)
-    if (s !== 'myDrive') { setFolderId(null); setFolderHistory([]) }
+    setFolderId(null)
+    setFolderHistory([])
     setSelected(new Set())
     setSearch('')
   }
