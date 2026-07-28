@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo, useLayoutEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
-  Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, User, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Shield, Bell, ChevronDown, CheckCircle2, LogOut
+  Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, User, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Shield, Bell, ChevronDown, CheckCircle2, LogOut, MoreVertical
 } from 'lucide-react'
 import ambaliLogo from '@/imports/ambalilogocrop-removebg-preview.png'
 import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, copyFile, createShareLink, removeShareLink, getStorageUsed, updateProfile, getSessions, revokeSession } from '../lib/api'
@@ -598,7 +598,7 @@ function MoveModal({ items, allItems, onClose, onMove }: { items: DriveItem[]; a
 function UploadToast({ files, onDone, onCancel }: { files: UploadItem[], onDone: () => void, onCancel: (id: string) => void }) {
   const allDone = files.every(f => f.done)
   return (
-    <div className="fixed bottom-5 right-5 z-50 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden slide-up">
+    <div className="fixed bottom-24 md:bottom-5 right-4 md:right-5 z-50 w-[calc(100%-2rem)] md:w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden slide-up">
       <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
         <div className="flex items-center gap-2">
           {allDone ? <CheckCircle2 size={15} color="#16A34A" /> : <CloudUpload size={15} color="#1054A0" />}
@@ -1055,13 +1055,13 @@ export default function Drive() {
   ]
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans overflow-hidden"
+    <div className="flex flex-col md:flex-row h-[100dvh] bg-gray-50 font-sans overflow-hidden"
       onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
     >
       {/* Sidebar */}
-      <aside className={`flex-shrink-0 ${sidebarOpen ? 'w-60' : 'w-0 overflow-hidden'} transition-all duration-200 flex flex-col bg-white border-r border-gray-100 h-full`}>
+      <aside className={`hidden md:flex flex-shrink-0 ${sidebarOpen ? 'w-60' : 'w-0 overflow-hidden'} transition-all duration-200 flex-col bg-white border-r border-gray-100 h-full`}>
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-50">
           <img src={ambaliLogo} alt="Ambali Drive logo" className="w-7 h-7 object-contain" />
@@ -1069,7 +1069,7 @@ export default function Drive() {
         </div>
 
         {/* New button */}
-        <div className="px-4 pt-4 pb-2">
+        <div className="hidden md:block px-4 pt-4 pb-2">
           <div className="relative">
             <button
               onClick={() => setNewMenu(!newMenu)}
@@ -1159,8 +1159,8 @@ export default function Drive() {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <header className="flex items-center gap-3 px-5 py-3 bg-white border-b border-gray-100 flex-shrink-0">
-          <button onClick={() => setSidebarOpen(s => !s)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600">
+        <header className="flex items-center gap-2 md:gap-3 px-3 md:px-5 py-2.5 md:py-3 bg-white border-b border-gray-100 flex-shrink-0">
+          <button onClick={() => setSidebarOpen(s => !s)} className="hidden md:block p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600">
             <List size={18} />
           </button>
           {/* Search */}
@@ -1222,17 +1222,17 @@ export default function Drive() {
         <main className="flex-1 overflow-y-auto"
           onClick={() => { setSelected(new Set()); setCtx(null); setNewMenu(false) }}
         >
-          <div className="px-6 pt-5 pb-8">
+          <div className="px-4 md:px-6 pt-4 md:pt-5 pb-8">
             {/* Breadcrumb + actions */}
             <div className="flex items-center gap-3 mb-5 flex-wrap">
               <div className="flex items-center gap-1 flex-1 min-w-0">
                 {search ? (
-                  <span className="text-base font-semibold text-gray-900">Search results for "{search}"</span>
+                  <span className="text-base font-semibold text-gray-900 truncate">Search results for "{search}"</span>
                 ) : section === 'myDrive' ? (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar flex-nowrap mask-edges max-w-full">
                     {breadcrumb.map((c, i) => (
-                      <div key={i} className="flex items-center gap-1">
-                        {i > 0 && <ChevronRight size={14} className="text-gray-300" />}
+                      <div key={i} className="flex items-center gap-1 flex-shrink-0">
+                        {i > 0 && <ChevronRight size={14} className="text-gray-300 flex-shrink-0" />}
                         <button
                           onClick={e => { e.stopPropagation(); navigateTo(c.id) }}
                           className={`text-sm font-medium rounded-lg px-2 py-1 transition-colors ${i === breadcrumb.length - 1 ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
@@ -1258,7 +1258,7 @@ export default function Drive() {
                 {section !== 'trash' && section !== 'shared' && !search && (
                   <button
                     onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }}
-                    className="flex items-center gap-1.5 px-3 py-2 text-sm text-[#1054A0] border border-blue-200 rounded-xl hover:bg-blue-50 transition-colors"
+                    className="hidden md:flex items-center gap-1.5 px-3 py-2 text-sm text-[#1054A0] border border-blue-200 rounded-xl hover:bg-blue-50 transition-colors"
                   >
                     <Upload size={14} />Upload
                   </button>
@@ -1468,7 +1468,7 @@ export default function Drive() {
       
       {/* Clipboard Bar */}
       {clipboard && (
-        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white rounded-full shadow-xl px-5 py-3 flex items-center gap-4 slide-up">
+        <div className="fixed bottom-24 md:bottom-5 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white rounded-full shadow-xl px-5 py-3 flex items-center gap-4 slide-up">
           <div className="flex items-center gap-2">
             {clipboard.action === 'copy' ? <Copy size={16} className="text-gray-400" /> : <Scissors size={16} className="text-gray-400" />}
             <span className="text-sm font-medium">{clipboard.items.length} item{clipboard.items.length !== 1 ? 's' : ''} {clipboard.action === 'copy' ? 'copied' : 'cut'}</span>
@@ -1488,6 +1488,47 @@ export default function Drive() {
       {uploads && (
         <UploadToast files={uploads} onDone={() => setUploads(null)} onCancel={handleCancelUpload} />
       )}
+
+      {/* Mobile Bottom Nav */}
+      <div className="md:hidden flex items-center justify-around bg-white border-t border-gray-200 px-2 py-1.5 flex-shrink-0 z-40">
+        {navItems.filter(n => n.id !== 'shared').map(n => {
+          const isActive = section === n.id
+          return (
+            <button
+              key={n.id}
+              onClick={() => navigateSection(n.id)}
+              className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[64px] rounded-xl transition-all ${isActive ? 'text-[#1054A0]' : 'text-gray-500 hover:bg-gray-50'}`}
+            >
+              <n.icon size={22} className={isActive ? 'text-[#1054A0] fill-blue-50' : 'text-gray-400'} strokeWidth={isActive ? 2 : 1.75} />
+              <span className={`text-[10px] font-medium ${isActive ? 'text-[#1054A0]' : 'text-gray-500'}`}>{n.label}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Mobile FAB */}
+      <div className="md:hidden fixed bottom-[72px] right-4 z-40">
+        <button
+          onClick={() => setNewMenu(!newMenu)}
+          className="flex items-center justify-center w-14 h-14 bg-gradient-to-r from-[#1054A0] to-[#2563EB] text-white rounded-2xl shadow-lg hover:shadow-xl transition-all"
+        >
+          <Plus size={24} />
+        </button>
+        {newMenu && (
+          <div className="absolute bottom-full right-0 mb-3 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50 fade-in overflow-hidden">
+            <button onClick={() => { setShowNewFolder(true); setNewMenu(false) }} className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+              <FolderPlus size={18} className="text-amber-500" />New folder
+            </button>
+            <div className="h-px bg-gray-100 my-0.5" />
+            <button onClick={() => { setNewMenu(false); fileInputRef.current?.click() }} className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+              <Upload size={18} className="text-blue-500" />File upload
+            </button>
+            <button onClick={() => { setNewMenu(false); folderInputRef.current?.click() }} className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+              <CloudUpload size={18} className="text-blue-500" />Folder upload
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -1537,7 +1578,12 @@ function FileGrid({ items, allItems, selected, section, onSelect, onOpen, onCtx,
 
         {/* Info */}
         <div className="px-3 pt-2 pb-3">
-          <p className="text-sm font-medium text-gray-800 truncate leading-tight">{item.name}</p>
+          <div className="flex items-start justify-between gap-1">
+            <p className="text-sm font-medium text-gray-800 truncate leading-tight flex-1">{item.name}</p>
+            <button onClick={e => { e.stopPropagation(); onCtx(e, item.id); }} className="md:hidden p-1 -mt-1 -mr-1 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors flex-shrink-0">
+              <MoreVertical size={16} />
+            </button>
+          </div>
           <div className="flex items-center gap-1.5 mt-0.5">
             {item.starred && <Star size={10} fill="#F59E0B" color="#F59E0B" />}
             {item.shareLink && <Globe size={10} className="text-blue-400" />}
@@ -1614,10 +1660,10 @@ function FileList({ items, allItems, selected, section, onSelect, onOpen, onCtx,
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden fade-in">
       {/* Header */}
-      <div className="grid grid-cols-[minmax(0,1fr)_120px_120px_80px] gap-3 px-4 py-2.5 border-b border-gray-50 bg-gray-50/50">
+      <div className="grid grid-cols-[minmax(0,1fr)_80px] md:grid-cols-[minmax(0,1fr)_120px_120px_80px] gap-3 px-4 py-2.5 border-b border-gray-50 bg-gray-50/50">
         <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Name</span>
-        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Owner</span>
-        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Modified</span>
+        <span className="hidden md:block text-xs font-medium text-gray-400 uppercase tracking-wide">Owner</span>
+        <span className="hidden md:block text-xs font-medium text-gray-400 uppercase tracking-wide">Modified</span>
         <span className="text-xs font-medium text-gray-400 uppercase tracking-wide text-right">Size</span>
       </div>
       {items.map((item, i) => {
@@ -1639,9 +1685,9 @@ function FileList({ items, allItems, selected, section, onSelect, onOpen, onCtx,
               }
             }}
             onDoubleClick={e => { e.stopPropagation(); onOpen(item); }}
-            className={`group grid grid-cols-[minmax(0,1fr)_120px_120px_80px] gap-3 px-4 py-2.5 items-center cursor-pointer transition-colors select-none ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'} ${i < items.length - 1 ? 'border-b border-gray-50' : ''}`}
+            className={`group grid grid-cols-[minmax(0,1fr)_80px] md:grid-cols-[minmax(0,1fr)_160px_120px_100px] gap-3 px-4 py-2.5 items-center cursor-pointer transition-colors select-none ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'} ${i < items.length - 1 ? 'border-b border-gray-50' : ''}`}
           >
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0 pr-2">
               <div className="flex-shrink-0">
                 {item.type === 'image' && item.thumbnailUrl ? (
                   <img src={item.thumbnailUrl} alt="" className="w-7 h-7 rounded object-cover" />
@@ -1668,9 +1714,18 @@ function FileList({ items, allItems, selected, section, onSelect, onOpen, onCtx,
                 </div>
               )}
             </div>
-            <span className="text-xs text-gray-500 truncate">{ownerName === (user?.name || 'User') ? 'me' : ownerName}</span>
-            <span className="text-xs text-gray-500">{fmtDate(item.modified)}</span>
-            <span className="text-xs text-gray-500 text-right">{item.type === 'folder' ? '—' : fmtBytes(item.size)}</span>
+
+            <span className="hidden md:block text-xs text-gray-500 truncate">{ownerName === (user?.name || 'User') ? 'me' : ownerName}</span>
+            <span className="hidden md:block text-xs text-gray-500">{fmtDate(item.modified)}</span>
+            <div className="text-xs text-gray-500 flex items-center justify-end gap-2">
+              <span className="text-right">{item.type === 'folder' ? '—' : fmtBytes(item.size)}</span>
+              <button
+                onClick={e => { e.stopPropagation(); onCtx(e, item.id); }}
+                className="md:hidden p-1 rounded-lg text-gray-400 hover:bg-gray-200 transition-colors"
+              >
+                <MoreVertical size={16} />
+              </button>
+            </div>
           </div>
         )
       })}
