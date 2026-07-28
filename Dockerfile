@@ -18,6 +18,7 @@ WORKDIR /app
 # Provide a dummy DATABASE_URL so prisma generate can run during build
 ARG DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
 ENV DATABASE_URL=${DATABASE_URL}
+ENV NODE_OPTIONS="--max_old_space_size=1536"
 
 ARG VITE_FIREBASE_API_KEY
 ARG VITE_FIREBASE_AUTH_DOMAIN
