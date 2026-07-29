@@ -90,7 +90,6 @@ function Modal({ onClose, children, width = 'max-w-lg' }: { onClose: () => void;
 // ─── Preview Modal ────────────────────────────────────────────────────────────
 function PreviewModal({ item, siblings, onClose, onDownload }: { item: DriveItem; siblings: DriveItem[]; onClose: () => void; onDownload: (id: string, name: string) => void }) {
   const imgSiblings = siblings.filter(s => s.type === 'image')
-  const idx = imgSiblings.findIndex(s => s.id === item.id)
   const [current, setCurrent] = useState(item)
   const [zoom, setZoom] = useState(1)
   const token = useAuthStore.getState().token;
@@ -948,7 +947,7 @@ export default function Drive() {
   const updateItem = (updated: DriveItem) => setItems(i => i.map(x => x.id === updated.id ? updated : x))
   const createFolder = async (name: string) => {
     try {
-      const folder = await apiCreateFolder(name, section === 'myDrive' ? folderId : null)
+      await apiCreateFolder(name, section === 'myDrive' ? folderId : null)
       loadData() // reload instead of optimistic to get exact ID
     } catch (e) { console.error(e) }
   }
@@ -1351,17 +1350,17 @@ export default function Drive() {
               </div>
             ) : viewMode === 'grid' ? (
               <FileGrid
-                items={filteredItems} allItems={items} selected={selected} section={section}
+                items={filteredItems} selected={selected} section={section}
                 onSelect={setSelected} onOpen={(item) => {
                   if (item.type === 'folder') openFolder(item.id, item.name)
                   else setPreviewItem(item)
                 }}
                 onCtx={(e, id) => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, itemId: id }) }}
-                onStar={toggleStar} onShare={setShareItem} onTrash={trashItem}
+                onStar={toggleStar} onShare={setShareItem}
               />
             ) : (
               <FileList
-                items={filteredItems} allItems={items} selected={selected} section={section}
+                items={filteredItems} selected={selected} section={section}
                 onSelect={setSelected} onOpen={(item) => {
                   if (item.type === 'folder') openFolder(item.id, item.name)
                   else setPreviewItem(item)
@@ -1534,13 +1533,12 @@ export default function Drive() {
 }
 
 // ─── File Grid ────────────────────────────────────────────────────────────────
-function FileGrid({ items, allItems, selected, section, onSelect, onOpen, onCtx, onStar, onShare, onTrash }: {
-  items: DriveItem[]; allItems: DriveItem[]; selected: Set<string>; section: NavSection
+function FileGrid({ items, selected, section, onSelect, onOpen, onCtx, onStar, onShare }: {
+  items: DriveItem[]; selected: Set<string>; section: NavSection
   onSelect: (s: Set<string>) => void; onOpen: (item: DriveItem) => void
   onCtx: (e: React.MouseEvent, id: string) => void; onStar: (id: string) => void
-  onShare: (item: DriveItem) => void; onTrash: (id: string) => void
+  onShare: (item: DriveItem) => void;
 }) {
-  const user = useAuthStore(s => s.user)
   const folders = items.filter(i => i.type === 'folder')
   const files = items.filter(i => i.type !== 'folder')
 
@@ -1650,8 +1648,8 @@ function FileGrid({ items, allItems, selected, section, onSelect, onOpen, onCtx,
 }
 
 // ─── File List ────────────────────────────────────────────────────────────────
-function FileList({ items, allItems, selected, section, onSelect, onOpen, onCtx, onStar, onShare, onTrash }: {
-  items: DriveItem[]; allItems: DriveItem[]; selected: Set<string>; section: NavSection
+function FileList({ items, selected, section, onSelect, onOpen, onCtx, onStar, onShare, onTrash }: {
+  items: DriveItem[]; selected: Set<string>; section: NavSection
   onSelect: (s: Set<string>) => void; onOpen: (item: DriveItem) => void
   onCtx: (e: React.MouseEvent, id: string) => void; onStar: (id: string) => void
   onShare: (item: DriveItem) => void; onTrash: (id: string) => void
