@@ -81,39 +81,50 @@ export default function Admin() {
   if (loading) return <div className="flex h-screen items-center justify-center bg-gray-50 text-gray-500">Loading admin panel...</div>;
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans">
+    <div className="flex flex-col md:flex-row h-[100dvh] bg-gray-50 font-sans">
       {/* Sidebar */}
-      <div className="w-64 bg-[#1054A0] text-white p-6 flex flex-col gap-8">
-        <div className="flex items-center gap-3">
-          <Shield size={28} className="text-white" />
-          <h1 className="text-xl font-bold tracking-tight">Admin Shield</h1>
+      <div className="w-full md:w-64 flex-shrink-0 bg-[#1054A0] text-white p-4 md:p-6 flex flex-col gap-4 md:gap-8">
+        <div className="flex items-center justify-between md:justify-start gap-3">
+          <div className="flex items-center gap-3">
+            <Shield size={28} className="text-white" />
+            <h1 className="text-xl font-bold tracking-tight">Admin Shield</h1>
+          </div>
         </div>
         
-        <nav className="flex flex-col gap-2">
+        <nav className="flex flex-row md:flex-col gap-2 overflow-x-auto hide-scrollbar pb-2 md:pb-0">
           <button 
             onClick={() => setActiveTab('users')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'users' ? 'bg-white/15 font-semibold' : 'hover:bg-white/5 text-blue-100'}`}
+            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'users' ? 'bg-white/15 font-semibold' : 'hover:bg-white/5 text-blue-100'}`}
           >
             <Users size={20} />
             Users
           </button>
           <button 
             onClick={() => setActiveTab('logs')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'logs' ? 'bg-white/15 font-semibold' : 'hover:bg-white/5 text-blue-100'}`}
+            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'logs' ? 'bg-white/15 font-semibold' : 'hover:bg-white/5 text-blue-100'}`}
           >
             <Activity size={20} />
             Audit Logs
           </button>
           <button 
             onClick={() => setActiveTab('settings')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'settings' ? 'bg-white/15 font-semibold' : 'hover:bg-white/5 text-blue-100'}`}
+            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'settings' ? 'bg-white/15 font-semibold' : 'hover:bg-white/5 text-blue-100'}`}
           >
             <Lock size={20} />
             Security Settings
           </button>
+
+          <div className="md:hidden flex items-center gap-2 ml-4 pl-4 border-l border-white/10 flex-shrink-0">
+            <button onClick={() => navigate('/drive')} className="text-sm font-medium text-blue-200 hover:text-white transition-colors whitespace-nowrap px-2">
+              Back to Drive
+            </button>
+            <button onClick={() => useAuthStore.getState().logout()} className="p-2 bg-red-500/20 text-red-200 rounded-lg">
+              <LogOut size={16} />
+            </button>
+          </div>
         </nav>
         
-        <div className="mt-auto pt-6 border-t border-white/10 flex flex-col gap-3">
+        <div className="hidden md:flex mt-auto pt-6 border-t border-white/10 flex-col gap-3">
           <button onClick={() => navigate('/drive')} className="text-sm text-left text-blue-200 hover:text-white transition-colors">
             &larr; Back to Drive
           </button>
@@ -128,10 +139,10 @@ export default function Admin() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-10">
+      <div className="flex-1 overflow-auto p-4 md:p-10">
         
         {/* Stats Header */}
-        <div className="grid grid-cols-3 gap-6 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-10">
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-[#1054A0]">
               <Users size={24} />
@@ -171,8 +182,9 @@ export default function Admin() {
                 <input type="text" placeholder="Search users..." className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0]" />
               </div>
             </div>
-            <table className="w-full text-left border-collapse">
-              <thead>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                <thead>
                 <tr className="bg-white border-b border-gray-100">
                   <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
                   <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
@@ -227,6 +239,7 @@ export default function Admin() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
 
@@ -236,7 +249,7 @@ export default function Admin() {
               <h2 className="text-lg font-bold text-gray-900">Audit Logs (Last 100 actions)</h2>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-white border-b border-gray-100">
                     <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Time</th>
