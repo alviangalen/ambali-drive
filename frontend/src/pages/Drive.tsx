@@ -1079,17 +1079,6 @@ export default function Drive() {
               New
               <ChevronDown size={14} className="ml-auto" />
             </button>
-            
-      {profileOpen && (
-        <ProfileModal 
-          user={user} 
-          onClose={() => setProfileOpen(false)} 
-          onUpdated={(newUser: any) => {
-            useAuthStore.setState(state => ({ ...state, user: newUser }));
-            useAuthStore.getState().login(newUser, useAuthStore.getState().token!);
-          }}
-        />
-      )}
 
 
         {newMenu && (
@@ -1594,6 +1583,17 @@ export default function Drive() {
             </div>
           </div>
         </div>
+      )}
+
+      {profileOpen && (
+        <ProfileModal 
+          user={user} 
+          onClose={() => setProfileOpen(false)} 
+          onUpdated={(newUser: any) => {
+            useAuthStore.setState(state => ({ ...state, user: newUser }));
+            useAuthStore.getState().login(newUser, useAuthStore.getState().token!);
+          }}
+        />
       )}
     </div>
   )
