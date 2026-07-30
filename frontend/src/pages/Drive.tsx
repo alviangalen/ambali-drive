@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo, useLayoutEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
-  Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, User, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Shield, Bell, ChevronDown, CheckCircle2, LogOut, MoreVertical
+  Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, User, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Shield, Bell, ChevronDown, CheckCircle2, LogOut, MoreVertical, Menu
 } from 'lucide-react'
 import ambaliLogo from '@/imports/ambalilogocrop-removebg-preview.png'
 import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, copyFile, createShareLink, removeShareLink, getStorageUsed, updateProfile, getSessions, revokeSession } from '../lib/api'
@@ -805,6 +805,7 @@ export default function Drive() {
   }, [uploads]);
   const [ctx, setCtx] = useState<CtxMenu | null>(null)
   const [newMenu, setNewMenu] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Modals
   const [previewItem, setPreviewItem] = useState<DriveItem | null>(null)
@@ -1503,6 +1504,13 @@ export default function Drive() {
             </button>
           )
         })}
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[64px] rounded-xl transition-all ${mobileMenuOpen ? 'text-[#1054A0]' : 'text-gray-500 hover:bg-gray-50'}`}
+        >
+          <Menu size={22} className={mobileMenuOpen ? 'text-[#1054A0]' : 'text-gray-400'} strokeWidth={1.75} />
+          <span className={`text-[10px] font-medium ${mobileMenuOpen ? 'text-[#1054A0]' : 'text-gray-500'}`}>Menu</span>
+        </button>
       </div>
 
       {/* Mobile FAB */}
@@ -1528,6 +1536,65 @@ export default function Drive() {
           </div>
         )}
       </div>
+
+      {/* Mobile Menu Bottom Sheet */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm fade-in" onClick={() => setMobileMenuOpen(false)} />
+          <div className="relative bg-white rounded-t-3xl p-6 slide-up w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-gray-900">Account & Storage</h3>
+              <button onClick={() => setMobileMenuOpen(false)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            
+            {/* Storage (copied from sidebar) */}
+            <div className="mb-6 p-4 bg-gray-50 border border-gray-100 rounded-2xl">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-gray-700">Storage Used</span>
+                <span className="text-xs font-medium text-gray-500">{fmtBytes(USED_BYTES)} of {fmtBytes(QUOTA)}</span>
+              </div>
+              <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${(USED_BYTES / QUOTA) * 100}%`,
+                    background: 'linear-gradient(90deg, #1054A0, #3B82F6)'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* User Details */}
+            <div className="flex items-center gap-3 mb-6 p-4 bg-blue-50 border border-blue-100 rounded-2xl">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white text-lg font-semibold flex-shrink-0">
+                {(user?.name?.substring(0,2).toUpperCase() || 'U')}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-base font-semibold text-gray-900 truncate">{(user?.name || 'User')}</p>
+                <p className="text-sm text-blue-600 truncate">{(user?.email || '')}</p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col gap-2">
+              <button onClick={() => { setMobileMenuOpen(false); setProfileOpen(true); }} className="flex items-center gap-3 px-4 py-3.5 bg-white border border-gray-100 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                <User size={18} className="text-[#1054A0]" /> Account Settings
+              </button>
+              {user?.role === 'admin' && (
+                <button onClick={() => { setMobileMenuOpen(false); window.location.href = '/admin'; }} className="flex items-center gap-3 px-4 py-3.5 bg-white border border-gray-100 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                  <Shield size={18} className="text-[#1054A0]" /> Admin Panel
+                </button>
+              )}
+              <div className="h-px bg-gray-100 my-1" />
+              <button onClick={() => { setMobileMenuOpen(false); logout(); }} className="flex items-center gap-3 px-4 py-3.5 bg-red-50 border border-red-100 rounded-xl text-sm font-medium text-red-600 hover:bg-red-100 transition-colors">
+                <LogOut size={18} className="text-red-500" /> Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
