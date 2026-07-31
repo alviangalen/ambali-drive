@@ -29,58 +29,71 @@ export async function createFolder(name: string, parentId: string | null = null)
   return res.json();
 }
 
-export function uploadFile(file: File, parentId: string | null = null, onProgress?: (pct: number) => void, signal?: AbortSignal): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    if (parentId) formData.append('parentId', parentId);
+export async function uploadFile(file: File, parentId: string | null = null, onProgress?: (pct: number) => void, signal?: AbortSignal): Promise<any> {
+  const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  const uploadId = Date.now().toString() + '-' + Math.round(Math.random() * 1E9);
+  
+  if (totalChunks === 0) {
+    throw new Error('File is empty');
+  }
 
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', `${BASE_URL}/upload`);
-    
-    const headers = getHeaders();
-    Object.keys(headers).forEach(key => {
-      xhr.setRequestHeader(key, headers[key as keyof typeof headers]);
-    });
+  let responseData: any = null;
 
-    if (signal) {
-      if (signal.aborted) {
-        reject(new Error('Upload canceled'));
-        return;
-      }
-      signal.addEventListener('abort', () => {
-        xhr.abort();
-        reject(new Error('Upload canceled'));
-      });
+  for (let i = 0; i < totalChunks; i++) {
+    if (signal?.aborted) {
+      throw new Error('Upload canceled');
     }
 
-    xhr.upload.onprogress = (e) => {
-      if (signal?.aborted) return;
-      if (e.lengthComputable && onProgress) {
-        const pct = Math.round((e.loaded / e.total) * 100);
-        onProgress(pct);
-      }
-    };
+    const start = i * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    const chunk = file.slice(start, end);
 
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          resolve(JSON.parse(xhr.responseText));
-        } catch {
-          resolve(xhr.responseText);
-        }
-      } else {
-        try {
-          reject(new Error(JSON.parse(xhr.responseText)?.error || 'Failed to upload file'));
-        } catch {
-          reject(new Error('Failed to upload file'));
-        }
-      }
-    };
+    const formData = new FormData();
+    formData.append('file', chunk, file.name);
+    formData.append('uploadId', uploadId);
+    formData.append('chunkIndex', i.toString());
+    formData.append('totalChunks', totalChunks.toString());
+    formData.append('filename', file.name);
+    formData.append('mimeType', file.type);
+    formData.append('totalSize', file.size.toString());
+    if (parentId) formData.append('parentId', parentId);
 
-    xhr.onerror = () => reject(new Error('Network Error'));
-    xhr.send(formData);
-  });
+    responseData = await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${BASE_URL}/upload-chunk`);
+      
+      const headers = getHeaders();
+      Object.keys(headers).forEach(key => {
+        xhr.setRequestHeader(key, headers[key as keyof typeof headers]);
+      });
+
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          xhr.abort();
+          reject(new Error('Upload canceled'));
+        });
+      }
+
+      xhr.upload.onprogress = (e) => {
+        if (signal?.aborted) return;
+        if (e.lengthComputable && onProgress) {
+          const overallLoaded = start + e.loaded;
+          const pct = Math.round((overallLoaded / file.size) * 100);
+          onProgress(pct);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText));
+        else reject(new Error(xhr.responseText || 'Upload failed'));
+      };
+      xhr.onerror = () => reject(new Error('Network Error'));
+      xhr.send(formData);
+    });
+  }
+
+  return responseData.file;
 }
 
 export async function renameFile(id: string, name: string) {

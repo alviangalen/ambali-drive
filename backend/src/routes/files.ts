@@ -120,6 +120,72 @@ router.post('/upload', authenticate, upload.single('file'), async (req: AuthRequ
   }
 });
 
+// Upload File (Chunked)
+router.post('/upload-chunk', authenticate, upload.single('file'), async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const chunk = req.file;
+    const { uploadId, chunkIndex, totalChunks, filename, parentId, mimeType, totalSize } = req.body;
+    const userId = req.user!.userId;
+
+    if (!chunk) return res.status(400).json({ error: 'No chunk uploaded' });
+    
+    const idx = parseInt(chunkIndex);
+    const total = parseInt(totalChunks);
+    
+    // File paths
+    const partPath = path.join(storageDir, `${uploadId}.part`);
+    
+    // Append chunk to the .part file safely
+    const chunkData = fs.readFileSync(chunk.path);
+    fs.appendFileSync(partPath, chunkData);
+    
+    // Remove the temporary chunk file created by multer
+    fs.unlinkSync(chunk.path);
+    
+    // If this is the last chunk, finalize the file
+    if (idx === total - 1) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const finalPhysicalName = uniqueSuffix + '-' + filename;
+      const finalPhysicalPath = path.join(storageDir, finalPhysicalName);
+      
+      // Rename .part to final
+      fs.renameSync(partPath, finalPhysicalPath);
+      
+      // DB Logic
+      let type = 'file';
+      if (mimeType?.startsWith('image/')) type = 'image';
+      else if (mimeType?.startsWith('video/')) type = 'video';
+      else if (mimeType === 'application/pdf') type = 'pdf';
+
+      const finalName = await getUniqueFilename(userId, parentId || null, filename, false);
+      const finalSize = totalSize ? BigInt(totalSize) : BigInt(0);
+
+      const dbFile = await prisma.file.create({
+        data: {
+          name: finalName,
+          type,
+          size: finalSize,
+          physicalPath: finalPhysicalName,
+          ownerId: userId,
+          parentId: parentId || null
+        }
+      });
+      
+      await prisma.user.update({
+        where: { id: userId },
+        data: { storageUsed: { increment: finalSize } }
+      });
+
+      return res.status(201).json({ completed: true, file: dbFile });
+    } else {
+      return res.status(200).json({ completed: false, message: `Chunk ${idx} uploaded` });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to upload chunk' });
+  }
+});
+
 // List Files/Folders (with trash filtering)
 router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<any> => {
   try {
