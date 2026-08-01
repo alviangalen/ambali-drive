@@ -6,6 +6,7 @@ import {
 import ambaliLogo from '@/imports/ambalilogocrop-removebg-preview.png'
 import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, copyFile, createShareLink, removeShareLink, getStorageUsed, updateProfile, getSessions, revokeSession } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
+import { useLongPress } from '../lib/useLongPress'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type FileType = 'folder' | 'image' | 'video' | 'audio' | 'pdf' | 'doc' | 'spreadsheet' | 'archive' | 'other'
@@ -1148,7 +1149,38 @@ export default function Drive() {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <header className="flex items-center gap-2 md:gap-3 px-3 md:px-5 py-2.5 md:py-3 bg-white border-b border-gray-100 flex-shrink-0">
+        <header className="flex items-center gap-2 md:gap-3 px-3 md:px-5 py-2.5 md:py-3 bg-white border-b border-gray-100 flex-shrink-0 relative">
+          {selected.size > 0 && (
+            <div className="absolute inset-0 z-10 bg-white flex items-center px-3 md:px-5 border-b border-gray-100 fade-in">
+              <button onClick={() => setSelected(new Set())} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 mr-2 transition-colors">
+                <X size={18} />
+              </button>
+              <span className="text-sm font-medium text-gray-700">{selected.size} selected</span>
+              <div className="ml-auto flex items-center gap-1 md:gap-2">
+                <button onClick={() => {
+                  const selectedItems = items.filter(i => selected.has(i.id));
+                  setClipboard({ action: 'copy', items: selectedItems });
+                  setSelected(new Set());
+                }} className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 flex items-center gap-1.5 transition-colors">
+                  <Copy size={16} /> <span className="hidden md:inline text-sm">Copy</span>
+                </button>
+                <button onClick={() => {
+                  const selectedItems = items.filter(i => selected.has(i.id));
+                  setClipboard({ action: 'cut', items: selectedItems });
+                  setSelected(new Set());
+                }} className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 flex items-center gap-1.5 transition-colors">
+                  <Scissors size={16} /> <span className="hidden md:inline text-sm">Cut</span>
+                </button>
+                <button onClick={() => {
+                  const selectedItems = items.filter(i => selected.has(i.id));
+                  selectedItems.forEach(i => trashItem(i.id));
+                  setSelected(new Set());
+                }} className="p-2 hover:bg-red-50 rounded-lg text-red-600 flex items-center gap-1.5 transition-colors">
+                  <Trash2 size={16} /> <span className="hidden md:inline text-sm">Delete</span>
+                </button>
+              </div>
+            </div>
+          )}
           <button onClick={() => setSidebarOpen(s => !s)} className="hidden md:block p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600">
             <List size={18} />
           </button>
@@ -1599,6 +1631,20 @@ export default function Drive() {
   )
 }
 
+function LongPressWrapper({ onLongPress, onClick, onDoubleClick, onContextMenu, children, className }: any) {
+  const handlers = useLongPress(onLongPress, onClick);
+  return (
+    <div 
+      {...handlers}
+      onDoubleClick={onDoubleClick}
+      onContextMenu={onContextMenu}
+      className={className}
+    >
+      {children}
+    </div>
+  )
+}
+
 // ─── File Grid ────────────────────────────────────────────────────────────────
 function FileGrid({ items, selected, section, onSelect, onOpen, onCtx, onStar, onShare }: {
   items: DriveItem[]; selected: Set<string>; section: NavSection
@@ -1613,21 +1659,32 @@ function FileGrid({ items, selected, section, onSelect, onOpen, onCtx, onStar, o
     const isSelected = selected.has(item.id)
     const isImg = item.type === 'image' && item.thumbnailUrl
     return (
-      <div
+      <LongPressWrapper
         key={item.id}
-        onContextMenu={e => onCtx(e, item.id)}
-        onClick={e => {
+        onContextMenu={(e: any) => onCtx(e, item.id)}
+        onLongPress={() => {
+          if (!selected.has(item.id)) {
+            const s = new Set(selected);
+            s.add(item.id);
+            onSelect(s);
+          }
+        }}
+        onClick={(e: any) => {
           e.stopPropagation();
-          if (e.ctrlKey || e.metaKey) {
+          if (selected.size > 0 || e.ctrlKey || e.metaKey) {
             const s = new Set(selected);
             if (s.has(item.id)) s.delete(item.id);
             else s.add(item.id);
             onSelect(s);
           } else {
-            onSelect(new Set([item.id]));
+            if (e.type.startsWith('touch') || e.nativeEvent?.pointerType === 'touch') {
+              onOpen(item);
+            } else {
+              onSelect(new Set([item.id]));
+            }
           }
         }}
-        onDoubleClick={e => { e.stopPropagation(); onOpen(item); }}
+        onDoubleClick={(e: any) => { e.stopPropagation(); onOpen(item); }}
         className={`group relative rounded-2xl border cursor-pointer transition-all select-none ${isSelected ? 'border-blue-300 bg-blue-50 shadow-sm' : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'}`}
       >
         {/* Thumbnail or icon area */}
@@ -1688,7 +1745,7 @@ function FileGrid({ items, selected, section, onSelect, onOpen, onCtx, onStar, o
             ))}
           </div>
         )}
-      </div>
+      </LongPressWrapper>
     )
   }
 
@@ -1735,21 +1792,32 @@ function FileList({ items, selected, section, onSelect, onOpen, onCtx, onStar, o
         const isSelected = selected.has(item.id)
         const ownerName = item.owner === user?.id ? user?.name : 'Unknown'
         return (
-          <div
+          <LongPressWrapper
             key={item.id}
-            onContextMenu={e => onCtx(e, item.id)}
-            onClick={e => {
+            onContextMenu={(e: any) => onCtx(e, item.id)}
+            onLongPress={() => {
+              if (!selected.has(item.id)) {
+                const s = new Set(selected);
+                s.add(item.id);
+                onSelect(s);
+              }
+            }}
+            onClick={(e: any) => {
               e.stopPropagation();
-              if (e.ctrlKey || e.metaKey) {
+              if (selected.size > 0 || e.ctrlKey || e.metaKey) {
                 const s = new Set(selected);
                 if (s.has(item.id)) s.delete(item.id);
                 else s.add(item.id);
                 onSelect(s);
               } else {
-                onSelect(new Set([item.id]));
+                if (e.type.startsWith('touch') || e.nativeEvent?.pointerType === 'touch') {
+                  onOpen(item);
+                } else {
+                  onSelect(new Set([item.id]));
+                }
               }
             }}
-            onDoubleClick={e => { e.stopPropagation(); onOpen(item); }}
+            onDoubleClick={(e: any) => { e.stopPropagation(); onOpen(item); }}
             className={`group grid grid-cols-[minmax(0,1fr)_80px] md:grid-cols-[minmax(0,1fr)_160px_120px_100px] gap-3 px-4 py-2.5 items-center cursor-pointer transition-colors select-none ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'} ${i < items.length - 1 ? 'border-b border-gray-50' : ''}`}
           >
             <div className="flex items-center gap-2.5 min-w-0 pr-2">
@@ -1791,7 +1859,7 @@ function FileList({ items, selected, section, onSelect, onOpen, onCtx, onStar, o
                 <MoreVertical size={16} />
               </button>
             </div>
-          </div>
+          </LongPressWrapper>
         )
       })}
     </div>
