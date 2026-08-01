@@ -1377,7 +1377,7 @@ export default function Drive() {
                   if (item.type === 'folder') openFolder(item.id, item.name)
                   else setPreviewItem(item)
                 }}
-                onCtx={(e, id) => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, itemId: id }) }}
+                onCtx={(e, id) => { e.preventDefault(); e.stopPropagation(); if (selected.size <= 1) setCtx({ x: e.clientX, y: e.clientY, itemId: id }) }}
                 onStar={toggleStar} onShare={setShareItem}
               />
             ) : (
@@ -1387,7 +1387,7 @@ export default function Drive() {
                   if (item.type === 'folder') openFolder(item.id, item.name)
                   else setPreviewItem(item)
                 }}
-                onCtx={(e, id) => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, itemId: id }) }}
+                onCtx={(e, id) => { e.preventDefault(); e.stopPropagation(); if (selected.size <= 1) setCtx({ x: e.clientX, y: e.clientY, itemId: id }) }}
                 onStar={toggleStar} onShare={setShareItem} onTrash={trashItem}
               />
             )}
