@@ -1702,9 +1702,11 @@ function FileGrid({ items, selected, section, onSelect, onOpen, onCtx, onStar, o
         <div className="px-3 pt-2 pb-3">
           <div className="flex items-start justify-between gap-1">
             <p className="text-sm font-medium text-gray-800 truncate leading-tight flex-1">{item.name}</p>
-            <button onClick={e => { e.stopPropagation(); onCtx(e, item.id); }} className="md:hidden p-1 -mt-1 -mr-1 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors flex-shrink-0">
-              <MoreVertical size={16} />
-            </button>
+            {selected.size <= 1 && (
+              <button onClick={e => { e.stopPropagation(); onCtx(e, item.id); }} className="md:hidden p-1 -mt-1 -mr-1 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors flex-shrink-0">
+                <MoreVertical size={16} />
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
             {item.starred && <Star size={10} fill="#F59E0B" color="#F59E0B" />}
@@ -1852,12 +1854,14 @@ function FileList({ items, selected, section, onSelect, onOpen, onCtx, onStar, o
             <span className="hidden md:block text-xs text-gray-500">{fmtDate(item.modified)}</span>
             <div className="text-xs text-gray-500 flex items-center justify-end gap-2">
               <span className="text-right">{item.type === 'folder' ? '—' : fmtBytes(item.size)}</span>
-              <button
-                onClick={e => { e.stopPropagation(); onCtx(e, item.id); }}
-                className="md:hidden p-1 rounded-lg text-gray-400 hover:bg-gray-200 transition-colors"
-              >
-                <MoreVertical size={16} />
-              </button>
+              {selected.size <= 1 && (
+                <button
+                  onClick={e => { e.stopPropagation(); onCtx(e, item.id); }}
+                  className="md:hidden p-1 rounded-lg text-gray-400 hover:bg-gray-200 transition-colors"
+                >
+                  <MoreVertical size={16} />
+                </button>
+              )}
             </div>
           </LongPressWrapper>
         )
