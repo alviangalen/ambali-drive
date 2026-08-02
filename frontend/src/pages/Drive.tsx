@@ -7,6 +7,7 @@ import ambaliLogo from '@/imports/ambalilogocrop-removebg-preview.png'
 import { fetchFiles, createFolder as apiCreateFolder, uploadFile, renameFile, trashFile, restoreFile, deleteFile, moveFile, copyFile, createShareLink, removeShareLink, getStorageUsed, updateProfile, getSessions, revokeSession } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { useLongPress } from '../lib/useLongPress'
+import { PdfViewer } from '../components/PdfViewer'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type FileType = 'folder' | 'image' | 'video' | 'audio' | 'pdf' | 'doc' | 'spreadsheet' | 'archive' | 'other'
@@ -191,11 +192,11 @@ function PreviewModal({ item, siblings, onClose, onDownload }: { item: DriveItem
           </div>
         )}
         {current.type === 'pdf' && (
-          <div className="flex flex-col items-center w-full h-full justify-center" onClick={e => e.stopPropagation()}>
-            <iframe
-              src={`${previewUrl}#toolbar=0&view=FitH`}
-              className="w-full max-w-4xl h-[75vh] rounded-xl bg-white"
+          <div className="w-full max-w-5xl h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <PdfViewer
+              url={previewUrl}
               title={current.name}
+              onDownload={() => onDownload(current.id, current.name)}
             />
           </div>
         )}

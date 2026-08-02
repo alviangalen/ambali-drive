@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom'
 import { getPublicFile } from '../lib/api'
 import { Download, Lock, FileText, FileImage, FileVideo, Music, FileArchive, Folder } from 'lucide-react'
 
+import { PdfViewer } from '../components/PdfViewer'
+
 const COLORS: Record<string, string> = {
   folder: '#F59E0B', image: '#1054A0', video: '#EF4444', audio: '#8B5CF6',
   pdf: '#EF4444', doc: '#3B82F6', spreadsheet: '#10B981', archive: '#6B7280', other: '#9CA3AF'
@@ -140,7 +142,13 @@ export default function PublicShare() {
         ) : file.type === 'audio' ? (
           <audio src={`/api/share/public/${hash}/download?preview=true${password ? '&password='+encodeURIComponent(password) : ''}`} controls autoPlay className="w-96" />
         ) : file.type === 'pdf' ? (
-          <iframe src={`/api/share/public/${hash}/download?preview=true${password ? '&password='+encodeURIComponent(password) : ''}#toolbar=0&view=FitH`} className="w-full max-w-4xl h-[75vh] rounded-xl bg-white" title={file.name} />
+          <div className="w-full max-w-5xl h-[80vh]">
+            <PdfViewer
+              url={`/api/share/public/${hash}/download?preview=true${password ? '&password='+encodeURIComponent(password) : ''}`}
+              title={file.name}
+              onDownload={allowDownload ? handleDownload : undefined}
+            />
+          </div>
         ) : (
           <div className="flex flex-col items-center gap-4">
             <div className="w-32 h-32 bg-white/5 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/10">
