@@ -30,31 +30,51 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, title, onDownload }) 
   const loadPdfJsScript = (): Promise<any> => {
     return new Promise((resolve, reject) => {
       if (window.pdfjsLib) {
+        if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.js';
+        }
         resolve(window.pdfjsLib);
         return;
       }
 
-      const existingScript = document.getElementById('pdfjs-script');
-      if (existingScript) {
-        existingScript.addEventListener('load', () => resolve(window.pdfjsLib));
-        existingScript.addEventListener('error', () => reject(new Error('Gagal memuat engine PDF viewer')));
-        return;
-      }
+      const sources = [
+        { js: '/vendor/pdfjs/pdf.min.js', worker: '/vendor/pdfjs/pdf.worker.min.js' },
+        { js: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', worker: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js' },
+        { js: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js', worker: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js' },
+      ];
 
-      const script = document.createElement('script');
-      script.id = 'pdfjs-script';
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-      script.async = true;
-      script.onload = () => {
-        if (window.pdfjsLib) {
-          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-          resolve(window.pdfjsLib);
-        } else {
-          reject(new Error('PDF.js lib missing after script load'));
+      let attempts = 0;
+
+      const tryNext = () => {
+        if (attempts >= sources.length) {
+          reject(new Error('Gagal memuat engine PDF viewer'));
+          return;
         }
+
+        const srcObj = sources[attempts++];
+        const scriptId = 'pdfjs-script';
+        const oldScript = document.getElementById(scriptId);
+        if (oldScript) oldScript.remove();
+
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.src = srcObj.js;
+        script.async = true;
+        script.onload = () => {
+          if (window.pdfjsLib) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = srcObj.worker;
+            resolve(window.pdfjsLib);
+          } else {
+            tryNext();
+          }
+        };
+        script.onerror = () => {
+          tryNext();
+        };
+        document.head.appendChild(script);
       };
-      script.onerror = () => reject(new Error('Gagal memuat engine PDF viewer'));
-      document.head.appendChild(script);
+
+      tryNext();
     });
   };
 
