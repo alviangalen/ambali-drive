@@ -16,15 +16,14 @@ declare global {
 export const PdfViewer: React.FC<PdfViewerProps> = ({ url, title, onDownload }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const renderTaskRef = useRef<any>(null);
 
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [pageNum, setPageNum] = useState<number>(1);
   const [numPages, setNumPages] = useState<number>(0);
   const [scale, setScale] = useState<number>(1.0);
-  const [fitWidthScale, setFitWidthScale] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [renderTask, setRenderTask] = useState<any>(null);
 
   // Load PDF.js library script dynamically
   const loadPdfJsScript = (): Promise<any> => {
@@ -110,41 +109,50 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, title, onDownload }) 
 
     return () => {
       isMounted = false;
+      if (renderTaskRef.current) {
+        try {
+          renderTaskRef.current.cancel();
+        } catch (e) {}
+        renderTaskRef.current = null;
+      }
     };
   }, [url]);
 
   // Render current page onto canvas
   const renderPage = useCallback(
-    async (pageNumber: number, currentScale: number) => {
+    async (pageNumber: number, targetScale: number) => {
       if (!pdfDoc || !canvasRef.current) return;
 
-      try {
-        if (renderTask) {
-          renderTask.cancel();
-        }
+      // Cancel previous render task if running
+      if (renderTaskRef.current) {
+        try {
+          renderTaskRef.current.cancel();
+        } catch (e) {}
+        renderTaskRef.current = null;
+      }
 
+      try {
         const page = await pdfDoc.getPage(pageNumber);
         const canvas = canvasRef.current;
+        if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        let activeScale = currentScale;
         const viewportUnscaled = page.getViewport({ scale: 1.0 });
 
+        // Fit to container width calculation
+        let calculatedFitScale = 1.0;
         if (containerRef.current) {
-          const containerWidth = containerRef.current.clientWidth - 32;
-          if (containerWidth > 0) {
-            const calculatedFitScale = containerWidth / viewportUnscaled.width;
-            setFitWidthScale(calculatedFitScale);
-            if (currentScale === 1.0) {
-              activeScale = Math.min(calculatedFitScale, 1.5);
-            }
-          }
+          const containerWidth = Math.max(containerRef.current.clientWidth - 32, 280);
+          calculatedFitScale = Math.min(containerWidth / viewportUnscaled.width, 1.5);
         }
 
-        const viewport = page.getViewport({ scale: activeScale });
+        const effectiveScale = targetScale * calculatedFitScale;
+        const viewport = page.getViewport({ scale: effectiveScale });
 
-        const outputScale = window.devicePixelRatio || 1;
+        // Cap pixel ratio to max 2.0 to avoid mobile GPU canvas memory exhaustion
+        const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+
         canvas.width = Math.floor(viewport.width * outputScale);
         canvas.height = Math.floor(viewport.height * outputScale);
         canvas.style.width = `${Math.floor(viewport.width)}px`;
@@ -158,16 +166,18 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, title, onDownload }) 
           viewport: viewport,
         };
 
-        const newRenderTask = page.render(renderContext);
-        setRenderTask(newRenderTask);
-        await newRenderTask.promise;
+        const task = page.render(renderContext);
+        renderTaskRef.current = task;
+
+        await task.promise;
+        renderTaskRef.current = null;
       } catch (err: any) {
         if (err?.name !== 'RenderingCancelledException') {
           console.error('Canvas render error:', err);
         }
       }
     },
-    [pdfDoc, renderTask]
+    [pdfDoc]
   );
 
   useEffect(() => {
@@ -185,7 +195,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, title, onDownload }) 
   };
 
   const handleZoomIn = () => {
-    setScale((s) => Math.min(s + 0.2, 3.0));
+    setScale((s) => Math.min(s + 0.2, 2.5));
   };
 
   const handleZoomOut = () => {
@@ -193,11 +203,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, title, onDownload }) 
   };
 
   const handleResetZoom = () => {
-    if (fitWidthScale) {
-      setScale(Math.min(fitWidthScale, 1.5));
-    } else {
-      setScale(1.0);
-    }
+    setScale(1.0);
   };
 
   return (
@@ -205,7 +211,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, title, onDownload }) 
       {/* Control Toolbar Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-neutral-800/90 border-b border-white/10 text-white text-sm">
         {/* Title */}
-        <div className="truncate max-w-[200px] sm:max-w-xs font-medium text-xs sm:text-sm text-neutral-200">
+        <div className="truncate max-w-[180px] sm:max-w-xs font-medium text-xs sm:text-sm text-neutral-200">
           {title || 'Dokumen PDF'}
         </div>
 
@@ -257,7 +263,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, title, onDownload }) 
             <button
               onClick={handleResetZoom}
               className="p-1 rounded hover:bg-white/10 transition-colors ml-1"
-              title="Sesuaikan Lebar"
+              title="Reset Zoom"
             >
               <RotateCcw size={14} />
             </button>
@@ -305,7 +311,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, title, onDownload }) 
 
         <canvas
           ref={canvasRef}
-          className={`shadow-2xl rounded transition-transform duration-100 bg-white ${
+          className={`shadow-2xl rounded bg-white ${
             isLoading || error ? 'hidden' : 'block'
           }`}
         />
