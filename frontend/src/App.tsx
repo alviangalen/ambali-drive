@@ -1,10 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Drive from './pages/Drive';
 import PublicShare from './pages/PublicShare';
 import Admin from './pages/Admin';
 import { useAuthStore } from './store/authStore';
+import { useThemeStore } from './store/themeStore';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((state) => state.token);
@@ -15,6 +17,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 export default function App() {
+  const isDarkMode = useThemeStore((state) => state.isDarkMode);
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
   return (
     <Router>
       <Routes>

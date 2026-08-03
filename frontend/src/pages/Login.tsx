@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { auth, googleProvider } from '../lib/firebase';
@@ -69,49 +69,49 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden slide-up">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden slide-up">
         <div className="px-8 pt-8 pb-6 text-center">
           <img src={ambaliLogo} alt="Ambali Drive" className="h-10 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
-          <p className="text-sm text-gray-500 mt-2">Sign in to your Ambali Drive account</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome back</h2>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-2">Sign in to your Ambali Drive account</p>
         </div>
 
         <div className="px-8 pb-8 space-y-6">
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl text-center">
+            <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl text-center">
               {error}
             </div>
           )}
 
           <form onSubmit={handleLocalLogin} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-700">Email Address</label>
+              <label className="text-xs font-medium text-gray-700 dark:text-slate-200">Email Address</label>
               <div className="relative">
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1054A0]/30 focus:border-[#1054A0] bg-gray-50/50 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1054A0]/30 focus:border-[#1054A0] bg-gray-50 dark:bg-slate-800/50 transition-all"
                   placeholder="name@ambali.io"
                   required
                 />
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-700">Password</label>
+              <label className="text-xs font-medium text-gray-700 dark:text-slate-200">Password</label>
               <div className="relative">
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1054A0]/30 focus:border-[#1054A0] bg-gray-50/50 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1054A0]/30 focus:border-[#1054A0] bg-gray-50 dark:bg-slate-800/50 transition-all"
                   placeholder="••••••••"
                   required
                 />
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
               </div>
             </div>
 
@@ -127,10 +127,10 @@ export default function Login() {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
+              <div className="w-full border-t border-gray-200 dark:border-slate-700"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <span className="px-2 bg-white dark:bg-slate-900 text-gray-500 dark:text-slate-400">Or continue with</span>
             </div>
           </div>
 
@@ -138,7 +138,7 @@ export default function Login() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-70"
+            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 text-sm font-medium rounded-xl hover:bg-gray-50 dark:bg-slate-800 transition-colors disabled:opacity-70"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -149,7 +149,7 @@ export default function Login() {
             Google
           </button>
 
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-gray-500 dark:text-slate-400">
             Don't have an account? <span className="text-[#1054A0] font-medium cursor-pointer hover:underline" onClick={() => navigate('/register')}>Sign up</span>
           </p>
         </div>
@@ -157,3 +157,4 @@ export default function Login() {
     </div>
   );
 }
+
