@@ -94,21 +94,21 @@ export default function Admin() {
         <nav className="flex flex-row md:flex-col gap-2 overflow-x-auto hide-scrollbar pb-2 md:pb-0">
           <button 
             onClick={() => setActiveTab('users')}
-            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'users' ? 'bg-white dark:bg-slate-900/15 font-semibold' : 'hover:bg-white dark:bg-slate-900/5 text-blue-100'}`}
+            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'users' ? 'bg-white dark:bg-slate-900/15 font-semibold' : 'hover:bg-white dark:hover:bg-slate-900/5 text-blue-100'}`}
           >
             <Users size={20} />
             Users
           </button>
           <button 
             onClick={() => setActiveTab('logs')}
-            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'logs' ? 'bg-white dark:bg-slate-900/15 font-semibold' : 'hover:bg-white dark:bg-slate-900/5 text-blue-100'}`}
+            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'logs' ? 'bg-white dark:bg-slate-900/15 font-semibold' : 'hover:bg-white dark:hover:bg-slate-900/5 text-blue-100'}`}
           >
             <Activity size={20} />
             Audit Logs
           </button>
           <button 
             onClick={() => setActiveTab('settings')}
-            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'settings' ? 'bg-white dark:bg-slate-900/15 font-semibold' : 'hover:bg-white dark:bg-slate-900/5 text-blue-100'}`}
+            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'settings' ? 'bg-white dark:bg-slate-900/15 font-semibold' : 'hover:bg-white dark:hover:bg-slate-900/5 text-blue-100'}`}
           >
             <Lock size={20} />
             Security Settings
@@ -196,7 +196,7 @@ export default function Admin() {
               </thead>
               <tbody>
                 {users.map(u => (
-                  <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50 dark:bg-slate-800/50 transition-colors">
+                  <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{u.name}</td>
                     <td className="px-6 py-4 text-gray-500 dark:text-slate-400 text-sm">{u.email}</td>
                     <td className="px-6 py-4 text-sm">
@@ -208,7 +208,7 @@ export default function Admin() {
                       {formatBytes(u.storageUsed)} / {formatBytes(u.storageQuota)}
                       <button 
                         onClick={() => handleQuotaUpdate(u.id, u.storageQuota)}
-                        className="ml-2 p-1 text-gray-400 dark:text-slate-500 hover:text-[#1054A0] transition-colors rounded hover:bg-blue-50 dark:bg-blue-900/20"
+                        className="ml-2 p-1 text-gray-400 dark:text-slate-500 hover:text-[#1054A0] transition-colors rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
                         title="Edit Quota"
                       >
                         <Pencil size={12} />
@@ -261,7 +261,7 @@ export default function Admin() {
                 </thead>
                 <tbody>
                   {logs.map(l => (
-                    <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50 dark:bg-slate-800/50 transition-colors text-sm">
+                    <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors text-sm">
                       <td className="px-6 py-4 text-gray-500 dark:text-slate-400">{new Date(l.createdAt).toLocaleString()}</td>
                       <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{l.admin.email}</td>
                       <td className="px-6 py-4">

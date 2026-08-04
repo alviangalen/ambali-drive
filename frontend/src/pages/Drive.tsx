@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useCallback, useEffect, useMemo, useLayoutEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo, useLayoutEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   Folder, FileText, FileImage, FileVideo, Music, FileArchive, Upload, Download, Plus, Search, Star, Share2, Trash2, LayoutGrid, List, ChevronRight, Clock, Users, User, X, Copy, Scissors, Clipboard, Link, Eye, EyeOff, Calendar, Lock, RotateCcw, Pencil, Home, ZoomIn, ZoomOut, ChevronLeft, CloudUpload, Globe, FolderPlus, Check, AlertTriangle, Move, Settings, HelpCircle, Shield, Bell, ChevronDown, CheckCircle2, LogOut, MoreVertical, Menu, Moon, Sun
@@ -130,19 +130,19 @@ function PreviewModal({ item, siblings, onClose, onDownload }: { item: DriveItem
         <div className="flex items-center gap-2">
           {current.type === 'image' && (
             <>
-              <button onClick={() => setZoom(z => Math.max(0.5, z - 0.25))} className="p-2 hover:bg-white dark:bg-slate-900/10 rounded-lg text-white/60 hover:text-white transition-colors">
+              <button onClick={() => setZoom(z => Math.max(0.5, z - 0.25))} className="p-2 hover:bg-white dark:hover:bg-slate-900/10 rounded-lg text-white/60 hover:text-white transition-colors">
                 <ZoomOut size={16} />
               </button>
               <span className="text-white/40 text-xs w-10 text-center">{Math.round(zoom * 100)}%</span>
-              <button onClick={() => setZoom(z => Math.min(3, z + 0.25))} className="p-2 hover:bg-white dark:bg-slate-900/10 rounded-lg text-white/60 hover:text-white transition-colors">
+              <button onClick={() => setZoom(z => Math.min(3, z + 0.25))} className="p-2 hover:bg-white dark:hover:bg-slate-900/10 rounded-lg text-white/60 hover:text-white transition-colors">
                 <ZoomIn size={16} />
               </button>
             </>
           )}
-          <button onClick={() => onDownload(current.id, current.name)} className="p-2 hover:bg-white dark:bg-slate-900/10 rounded-lg text-white/60 hover:text-white transition-colors">
+          <button onClick={() => onDownload(current.id, current.name)} className="p-2 hover:bg-white dark:hover:bg-slate-900/10 rounded-lg text-white/60 hover:text-white transition-colors">
             <Download size={16} />
           </button>
-          <button onClick={onClose} className="p-2 hover:bg-white dark:bg-slate-900/10 rounded-lg text-white/60 hover:text-white transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-white dark:hover:bg-slate-900/10 rounded-lg text-white/60 hover:text-white transition-colors">
             <X size={16} />
           </button>
         </div>
@@ -309,7 +309,7 @@ function ShareModal({ item, onClose, onUpdate }: { item: DriveItem; onClose: () 
             <h2 className="text-base font-semibold text-gray-900 dark:text-white">Share "{item.name}"</h2>
             <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Manage access and sharing settings</p>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 dark:bg-slate-800/50 rounded-lg transition-colors"><X size={16} className="text-gray-400 dark:text-slate-500" /></button>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-lg transition-colors"><X size={16} className="text-gray-400 dark:text-slate-500" /></button>
         </div>
         <div className="flex gap-1 bg-gray-100 dark:bg-slate-800/50 p-1 rounded-xl">
           {(['people', 'link'] as const).map(t => (
@@ -348,7 +348,7 @@ function ShareModal({ item, onClose, onUpdate }: { item: DriveItem; onClose: () 
                 <span className="text-xs text-gray-400 dark:text-slate-500 font-medium px-2 py-1 bg-gray-200 dark:bg-slate-700 rounded-lg">Owner</span>
               </div>
               {shared.map(u => (
-                <div key={u.id} className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-gray-50 dark:bg-slate-800 group">
+                <div key={u.id} className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 group">
                   <Avatar initials={u.initials} color={u.color} size={32} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{u.name}</p>
@@ -359,7 +359,7 @@ function ShareModal({ item, onClose, onUpdate }: { item: DriveItem; onClose: () 
                       <option value="viewer">Viewer</option>
                       <option value="editor">Editor</option>
                     </select>
-                    <button onClick={() => removeUser(u.id)} className="p-1 hover:bg-red-50 dark:bg-red-900/20 rounded-lg text-gray-400 dark:text-slate-500 hover:text-red-500 transition-colors"><X size={14} /></button>
+                    <button onClick={() => removeUser(u.id)} className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-gray-400 dark:text-slate-500 hover:text-red-500 transition-colors"><X size={14} /></button>
                   </div>
                   <span className={`text-xs font-medium px-2 py-1 rounded-lg group-hover:hidden ${u.role === 'editor' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-slate-800/50 text-gray-500 dark:text-slate-400'}`}>{u.role}</span>
                 </div>
@@ -472,7 +472,7 @@ function ShareModal({ item, onClose, onUpdate }: { item: DriveItem; onClose: () 
       </div>
 
       <div className="px-6 py-4 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-2">
-        <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:bg-slate-800/50 rounded-xl transition-colors">Cancel</button>
+        <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-xl transition-colors">Cancel</button>
         <button onClick={save} className="px-5 py-2 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0D4A8A] transition-colors">Save</button>
       </div>
     </Modal>
@@ -499,7 +499,7 @@ function RenameModal({ item, onClose, onRename }: { item: DriveItem; onClose: ()
           className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 dark:bg-slate-800/50 text-gray-900 dark:text-white"
         />
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:bg-slate-800/50 rounded-xl transition-colors">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-xl transition-colors">Cancel</button>
           <button onClick={submit} className="px-5 py-2 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0D4A8A] transition-colors">Rename</button>
         </div>
       </div>
@@ -527,7 +527,7 @@ function NewFolderModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
           className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-gray-50 dark:bg-slate-800/50 text-gray-900 dark:text-white"
         />
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:bg-slate-800/50 rounded-xl transition-colors">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-xl transition-colors">Cancel</button>
           <button onClick={submit} className="px-5 py-2 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0D4A8A] transition-colors">Create</button>
         </div>
       </div>
@@ -550,7 +550,7 @@ function EmptyTrashModal({ count, onClose, onConfirm }: { count: number; onClose
           {count} item{count !== 1 ? 's' : ''} will be permanently deleted and cannot be recovered.
         </p>
         <div className="flex justify-end gap-2 mt-5">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:bg-slate-800/50 rounded-xl transition-colors">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-xl transition-colors">Cancel</button>
           <button onClick={() => { onConfirm(); onClose() }} className="px-5 py-2 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 transition-colors">Empty trash</button>
         </div>
       </div>
@@ -571,7 +571,7 @@ function MoveModal({ items, allItems, onClose, onMove }: { items: DriveItem[]; a
         <div className="border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden divide-y divide-gray-100 dark:divide-slate-800 max-h-56 overflow-y-auto">
           <button
             onClick={() => setSelected(null)}
-            className={`flex items-center gap-2.5 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:bg-slate-800 transition-colors text-left ${selected === null ? 'bg-blue-50 dark:bg-blue-900/20 text-[#1054A0]' : 'text-gray-700 dark:text-slate-200'}`}
+            className={`flex items-center gap-2.5 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors text-left ${selected === null ? 'bg-blue-50 dark:bg-blue-900/20 text-[#1054A0]' : 'text-gray-700 dark:text-slate-200'}`}
           >
             <Home size={14} className={selected === null ? 'text-[#1054A0]' : 'text-gray-400 dark:text-slate-500'} />
             My Drive (root)
@@ -580,7 +580,7 @@ function MoveModal({ items, allItems, onClose, onMove }: { items: DriveItem[]; a
             <button
               key={f.id}
               onClick={() => setSelected(f.id)}
-              className={`flex items-center gap-2.5 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:bg-slate-800 transition-colors text-left ${selected === f.id ? 'bg-blue-50 dark:bg-blue-900/20 text-[#1054A0]' : 'text-gray-700 dark:text-slate-200'}`}
+              className={`flex items-center gap-2.5 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors text-left ${selected === f.id ? 'bg-blue-50 dark:bg-blue-900/20 text-[#1054A0]' : 'text-gray-700 dark:text-slate-200'}`}
             >
               <Folder size={14} color={selected === f.id ? '#1054A0' : '#F59E0B'} />
               {f.name}
@@ -588,7 +588,7 @@ function MoveModal({ items, allItems, onClose, onMove }: { items: DriveItem[]; a
           ))}
         </div>
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:bg-slate-800/50 rounded-xl transition-colors">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-xl transition-colors">Cancel</button>
           <button onClick={() => { items.forEach(i => onMove(i.id, selected)); onClose() }} className="px-5 py-2 bg-[#1054A0] text-white text-sm font-medium rounded-xl hover:bg-[#0D4A8A] transition-colors">Move here</button>
         </div>
       </div>
@@ -688,7 +688,7 @@ function ContextMenu({
   const MenuItem = ({ icon: Icon, label, onClick, danger = false }: { icon: React.ComponentType<any>; label: string; onClick: () => void; danger?: boolean }) => (
     <button
       onClick={() => { onClick(); onClose() }}
-      className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left ${danger ? 'text-red-600 hover:bg-red-50 dark:bg-red-900/20' : 'text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:bg-slate-800/50'}`}
+      className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg transition-colors text-left ${danger ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20' : 'text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800/50'}`}
     >
       <Icon size={14} className={danger ? 'text-red-400' : 'text-gray-400 dark:text-slate-500'} />
       {label}
@@ -1087,14 +1087,14 @@ export default function Drive() {
 
         {newMenu && (
               <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-100 dark:border-slate-800 py-1.5 z-20 fade-in">
-                <button onClick={() => { setShowNewFolder(true); setNewMenu(false) }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:bg-slate-800 transition-colors">
+                <button onClick={() => { setShowNewFolder(true); setNewMenu(false) }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                   <FolderPlus size={15} className="text-amber-500" />New folder
                 </button>
                 <div className="h-px bg-gray-100 dark:bg-slate-800/50 my-1" />
-                <button onClick={() => { setNewMenu(false); fileInputRef.current?.click() }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:bg-slate-800 transition-colors">
+                <button onClick={() => { setNewMenu(false); fileInputRef.current?.click() }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                   <Upload size={15} className="text-blue-500 dark:text-blue-400" />File upload
                 </button>
-                <button onClick={() => { setNewMenu(false); folderInputRef.current?.click() }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:bg-slate-800 transition-colors">
+                <button onClick={() => { setNewMenu(false); folderInputRef.current?.click() }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                   <CloudUpload size={15} className="text-blue-500 dark:text-blue-400" />Folder upload
                 </button>
               </div>
@@ -1110,7 +1110,7 @@ export default function Drive() {
               <button
                 key={n.id}
                 onClick={() => navigateSection(n.id)}
-                className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-sm transition-all ${isActive ? 'bg-blue-50 dark:bg-blue-900/20 text-[#1054A0] font-medium' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:bg-slate-800 hover:text-gray-900 dark:text-white'}`}
+                className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-sm transition-all ${isActive ? 'bg-blue-50 dark:bg-blue-900/20 text-[#1054A0] font-medium' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:text-white'}`}
               >
                 <n.icon size={16} className={isActive ? 'text-[#1054A0]' : 'text-gray-400 dark:text-slate-500'} strokeWidth={isActive ? 2 : 1.75} />
                 {n.label}
@@ -1155,7 +1155,7 @@ export default function Drive() {
         <header className="flex items-center gap-2 md:gap-3 px-3 md:px-5 py-2.5 md:py-3 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 flex-shrink-0 relative">
           {selected.size > 0 && (
             <div className="absolute inset-0 z-10 bg-white dark:bg-slate-900 flex items-center px-3 md:px-5 border-b border-gray-100 dark:border-slate-800 fade-in">
-              <button onClick={() => setSelected(new Set())} className="p-2 hover:bg-gray-100 dark:bg-slate-800/50 rounded-lg text-gray-500 dark:text-slate-400 mr-2 transition-colors">
+              <button onClick={() => setSelected(new Set())} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-lg text-gray-500 dark:text-slate-400 mr-2 transition-colors">
                 <X size={18} />
               </button>
               <span className="text-sm font-medium text-gray-700 dark:text-slate-200">{selected.size} selected</span>
@@ -1164,27 +1164,27 @@ export default function Drive() {
                   const selectedItems = items.filter(i => selected.has(i.id));
                   setClipboard({ action: 'copy', items: selectedItems });
                   setSelected(new Set());
-                }} className="p-2 hover:bg-gray-100 dark:bg-slate-800/50 rounded-lg text-gray-600 dark:text-slate-300 flex items-center gap-1.5 transition-colors">
+                }} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-lg text-gray-600 dark:text-slate-300 flex items-center gap-1.5 transition-colors">
                   <Copy size={16} /> <span className="hidden md:inline text-sm">Copy</span>
                 </button>
                 <button onClick={() => {
                   const selectedItems = items.filter(i => selected.has(i.id));
                   setClipboard({ action: 'cut', items: selectedItems });
                   setSelected(new Set());
-                }} className="p-2 hover:bg-gray-100 dark:bg-slate-800/50 rounded-lg text-gray-600 dark:text-slate-300 flex items-center gap-1.5 transition-colors">
+                }} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-lg text-gray-600 dark:text-slate-300 flex items-center gap-1.5 transition-colors">
                   <Scissors size={16} /> <span className="hidden md:inline text-sm">Cut</span>
                 </button>
                 <button onClick={() => {
                   const selectedItems = items.filter(i => selected.has(i.id));
                   selectedItems.forEach(i => trashItem(i.id));
                   setSelected(new Set());
-                }} className="p-2 hover:bg-red-50 dark:bg-red-900/20 rounded-lg text-red-600 flex items-center gap-1.5 transition-colors">
+                }} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-600 flex items-center gap-1.5 transition-colors">
                   <Trash2 size={16} /> <span className="hidden md:inline text-sm">Delete</span>
                 </button>
               </div>
             </div>
           )}
-          <button onClick={() => setSidebarOpen(s => !s)} className="hidden md:block p-1.5 hover:bg-gray-100 dark:bg-slate-800/50 rounded-lg transition-colors text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:text-slate-300">
+          <button onClick={() => setSidebarOpen(s => !s)} className="hidden md:block p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-lg transition-colors text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:text-slate-300">
             <List size={18} />
           </button>
           {/* Search */}
@@ -1203,12 +1203,12 @@ export default function Drive() {
             )}
           </div>
           <div className="flex items-center gap-1 ml-auto">
-            <button className="p-2 hover:bg-gray-100 dark:bg-slate-800/50 rounded-lg transition-colors text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:text-slate-300" title="Notifications">
+            <button className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-lg transition-colors text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:text-slate-300" title="Notifications">
               <Bell size={17} />
             </button>
             <div className="relative">
               <button 
-                className="p-2 hover:bg-gray-100 dark:bg-slate-800/50 rounded-lg transition-colors text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:text-slate-300 focus:outline-none" 
+                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-lg transition-colors text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:text-slate-300 focus:outline-none" 
                 title="Settings"
                 onClick={() => setSettingsOpen(!settingsOpen)}
               >
@@ -1219,33 +1219,33 @@ export default function Drive() {
                   <div className="fixed inset-0 z-40" onClick={() => setSettingsOpen(false)} />
                   <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-gray-100 dark:border-slate-800 py-1.5 z-50 overflow-hidden">
                     {user?.role === 'admin' && (
-                      <button onClick={() => { setSettingsOpen(false); window.location.href = '/admin'; }} className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:bg-slate-800 flex items-center gap-2.5 transition-colors">
-                        <Shield size={16} className="text-gray-400 dark:text-slate-500" />
+                      <button onClick={() => { setSettingsOpen(false); window.location.href = '/admin'; }} className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center gap-2.5 transition-colors">
+                        <Shield size={16} className="text-gray-400 dark:text-slate-400" />
                         Admin Panel
                       </button>
                     )}
-                    <button onClick={() => { setSettingsOpen(false); setProfileOpen(true); }} className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:bg-slate-800 flex items-center gap-2.5 transition-colors">
-                      <User size={16} className="text-gray-400 dark:text-slate-500" />
+                    <button onClick={() => { setSettingsOpen(false); setProfileOpen(true); }} className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center gap-2.5 transition-colors">
+                      <User size={16} className="text-gray-400 dark:text-slate-400" />
                       Account Settings
                     </button>
-                    <button onClick={() => { setSettingsOpen(false); toggleDarkMode(); }} className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:bg-slate-800 flex items-center justify-between transition-colors">
+                    <button onClick={() => { setSettingsOpen(false); toggleDarkMode(); }} className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center justify-between transition-colors">
                       <div className="flex items-center gap-2.5">
-                        {isDarkMode ? <Sun size={16} className="text-gray-400 dark:text-slate-500" /> : <Moon size={16} className="text-gray-400 dark:text-slate-500" />}
-                        Dark Mode
+                        {isDarkMode ? <Sun size={16} className="text-amber-500" /> : <Moon size={16} className="text-blue-500" />}
+                        {isDarkMode ? 'Light Mode' : 'Dark Mode'}
                       </div>
-                      <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${isDarkMode ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'}`}>
-                        <div className={`w-3 h-3 rounded-full bg-white dark:bg-slate-900 transition-transform ${isDarkMode ? 'translate-x-4' : 'translate-x-0'}`} />
+                      <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${isDarkMode ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-700'}`}>
+                        <div className={`w-3 h-3 rounded-full bg-white transition-transform ${isDarkMode ? 'translate-x-4' : 'translate-x-0'}`} />
                       </div>
                     </button>
-                    <button onClick={() => { setSettingsOpen(false); logout(); }} className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:bg-red-900/20 flex items-center gap-2.5 transition-colors">
-                      <LogOut size={16} className="text-red-500" />
+                    <button onClick={() => { setSettingsOpen(false); logout(); }} className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center gap-2.5 transition-colors">
+                      <LogOut size={16} className="text-red-500 dark:text-red-400" />
                       Logout
                     </button>
                   </div>
                 </>
               )}
             </div>
-            <button className="p-2 hover:bg-gray-100 dark:bg-slate-800/50 rounded-lg transition-colors text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:text-slate-300" title="Help">
+            <button className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-lg transition-colors text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:text-slate-300" title="Help">
               <HelpCircle size={17} />
             </button>
           </div>
@@ -1268,7 +1268,7 @@ export default function Drive() {
                         {i > 0 && <ChevronRight size={14} className="text-gray-300 flex-shrink-0" />}
                         <button
                           onClick={e => { e.stopPropagation(); navigateTo(c.id) }}
-                          className={`text-sm font-medium rounded-lg px-2 py-1 transition-colors ${i === breadcrumb.length - 1 ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-slate-800/50' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:text-slate-100 hover:bg-gray-100 dark:bg-slate-800/50'}`}
+                          className={`text-sm font-medium rounded-lg px-2 py-1 transition-colors ${i === breadcrumb.length - 1 ? 'text-gray-900 dark:text-white bg-gray-100 dark:bg-slate-800/50' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800/50'}`}
                         >
                           {c.name}
                         </button>
@@ -1284,14 +1284,14 @@ export default function Drive() {
 
               <div className="flex items-center gap-2 flex-shrink-0">
                 {section === 'trash' && trashCount > 0 && (
-                  <button onClick={e => { e.stopPropagation(); setShowEmptyTrash(true) }} className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-xl hover:bg-red-50 dark:bg-red-900/20 transition-colors">
+                  <button onClick={e => { e.stopPropagation(); setShowEmptyTrash(true) }} className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                     <Trash2 size={14} />Empty trash
                   </button>
                 )}
                 {section !== 'trash' && section !== 'shared' && !search && (
                   <button
                     onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }}
-                    className="hidden md:flex items-center gap-1.5 px-3 py-2 text-sm text-[#1054A0] border border-blue-200 rounded-xl hover:bg-blue-50 dark:bg-blue-900/20 transition-colors"
+                    className="hidden md:flex items-center gap-1.5 px-3 py-2 text-sm text-[#1054A0] border border-blue-200 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                   >
                     <Upload size={14} />Upload
                   </button>
@@ -1316,7 +1316,7 @@ export default function Drive() {
                     <button
                       key={item.id}
                       onDoubleClick={e => { e.stopPropagation(); setPreviewItem(item) }}
-                      className="group flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-white dark:bg-slate-900 hover:shadow-sm border border-transparent hover:border-gray-100 dark:border-slate-800 transition-all text-center"
+                      className="group flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-white dark:hover:bg-slate-900 hover:shadow-sm border border-transparent hover:border-gray-100 dark:border-slate-800 transition-all text-center"
                     >
                       {item.type === 'image' && item.thumbnailUrl ? (
                         <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-slate-800/50">
@@ -1530,7 +1530,7 @@ export default function Drive() {
             <button
               key={n.id}
               onClick={() => navigateSection(n.id)}
-              className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[64px] rounded-xl transition-all ${isActive ? 'text-[#1054A0]' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:bg-slate-800'}`}
+              className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[64px] rounded-xl transition-all ${isActive ? 'text-[#1054A0]' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
             >
               <n.icon size={22} className={isActive ? 'text-[#1054A0] fill-blue-50' : 'text-gray-400 dark:text-slate-500'} strokeWidth={isActive ? 2 : 1.75} />
               <span className={`text-[10px] font-medium ${isActive ? 'text-[#1054A0]' : 'text-gray-500 dark:text-slate-400'}`}>{n.label}</span>
@@ -1539,7 +1539,7 @@ export default function Drive() {
         })}
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[64px] rounded-xl transition-all ${mobileMenuOpen ? 'text-[#1054A0]' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:bg-slate-800'}`}
+          className={`flex flex-col items-center justify-center gap-1 p-2 min-w-[64px] rounded-xl transition-all ${mobileMenuOpen ? 'text-[#1054A0]' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
         >
           <Menu size={22} className={mobileMenuOpen ? 'text-[#1054A0]' : 'text-gray-400 dark:text-slate-500'} strokeWidth={1.75} />
           <span className={`text-[10px] font-medium ${mobileMenuOpen ? 'text-[#1054A0]' : 'text-gray-500 dark:text-slate-400'}`}>Menu</span>
@@ -1556,14 +1556,14 @@ export default function Drive() {
         </button>
         {newMenu && (
           <div className="absolute bottom-full right-0 mb-3 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 py-2 z-50 fade-in overflow-hidden">
-            <button onClick={() => { setShowNewFolder(true); setNewMenu(false) }} className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:bg-slate-800 transition-colors">
+            <button onClick={() => { setShowNewFolder(true); setNewMenu(false) }} className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
               <FolderPlus size={18} className="text-amber-500" />New folder
             </button>
             <div className="h-px bg-gray-100 dark:bg-slate-800/50 my-0.5" />
-            <button onClick={() => { setNewMenu(false); fileInputRef.current?.click() }} className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:bg-slate-800 transition-colors">
+            <button onClick={() => { setNewMenu(false); fileInputRef.current?.click() }} className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
               <Upload size={18} className="text-blue-500 dark:text-blue-400" />File upload
             </button>
-            <button onClick={() => { setNewMenu(false); folderInputRef.current?.click() }} className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:bg-slate-800 transition-colors">
+            <button onClick={() => { setNewMenu(false); folderInputRef.current?.click() }} className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
               <CloudUpload size={18} className="text-blue-500 dark:text-blue-400" />Folder upload
             </button>
           </div>
@@ -1577,7 +1577,7 @@ export default function Drive() {
           <div className="relative bg-white dark:bg-slate-900 rounded-t-3xl p-6 slide-up w-full max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">Account & Storage</h3>
-              <button onClick={() => setMobileMenuOpen(false)} className="p-2 bg-gray-100 dark:bg-slate-800/50 hover:bg-gray-200 dark:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 transition-colors">
+              <button onClick={() => setMobileMenuOpen(false)} className="p-2 bg-gray-100 dark:bg-slate-800/50 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -1612,26 +1612,26 @@ export default function Drive() {
 
             {/* Actions */}
             <div className="flex flex-col gap-2">
-              <button onClick={() => { setMobileMenuOpen(false); setProfileOpen(true); }} className="flex items-center gap-3 px-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:bg-slate-800 transition-colors">
+              <button onClick={() => { setMobileMenuOpen(false); setProfileOpen(true); }} className="flex items-center gap-3 px-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                 <User size={18} className="text-[#1054A0]" /> Account Settings
               </button>
               {user?.role === 'admin' && (
-                <button onClick={() => { setMobileMenuOpen(false); window.location.href = '/admin'; }} className="flex items-center gap-3 px-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:bg-slate-800 transition-colors">
+                <button onClick={() => { setMobileMenuOpen(false); window.location.href = '/admin'; }} className="flex items-center gap-3 px-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                   <Shield size={18} className="text-[#1054A0]" /> Admin Panel
                 </button>
               )}
-              <button onClick={() => toggleDarkMode()} className="flex items-center justify-between px-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:bg-slate-800 transition-colors">
+              <button onClick={() => toggleDarkMode()} className="flex items-center justify-between px-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                 <div className="flex items-center gap-3">
-                  {isDarkMode ? <Sun size={18} className="text-[#1054A0]" /> : <Moon size={18} className="text-[#1054A0]" />}
-                  Dark Mode
+                  {isDarkMode ? <Sun size={18} className="text-amber-500" /> : <Moon size={18} className="text-blue-500" />}
+                  {isDarkMode ? 'Light Mode' : 'Dark Mode'}
                 </div>
-                <div className={`w-10 h-5 rounded-full p-0.5 transition-colors ${isDarkMode ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'}`}>
-                  <div className={`w-4 h-4 rounded-full bg-white dark:bg-slate-900 transition-transform ${isDarkMode ? 'translate-x-5' : 'translate-x-0'}`} />
+                <div className={`w-10 h-5 rounded-full p-0.5 transition-colors ${isDarkMode ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-700'}`}>
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${isDarkMode ? 'translate-x-5' : 'translate-x-0'}`} />
                 </div>
               </button>
               <div className="h-px bg-gray-100 dark:bg-slate-800/50 my-1" />
-              <button onClick={() => { setMobileMenuOpen(false); logout(); }} className="flex items-center gap-3 px-4 py-3.5 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl text-sm font-medium text-red-600 hover:bg-red-100 transition-colors">
-                <LogOut size={18} className="text-red-500" /> Logout
+              <button onClick={() => { setMobileMenuOpen(false); logout(); }} className="flex items-center gap-3 px-4 py-3.5 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/60 transition-colors">
+                <LogOut size={18} className="text-red-500 dark:text-red-400" /> Logout
               </button>
             </div>
           </div>
@@ -1724,7 +1724,7 @@ function FileGrid({ items, selected, section, onSelect, onOpen, onCtx, onStar, o
           <div className="flex items-start justify-between gap-1">
             <p className="text-sm font-medium text-gray-800 dark:text-slate-100 truncate leading-tight flex-1">{item.name}</p>
             {selected.size <= 1 && (
-              <button onClick={e => { e.stopPropagation(); onCtx(e, item.id); }} className="md:hidden p-1 -mt-1 -mr-1 rounded-lg text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:bg-slate-800/50 transition-colors flex-shrink-0">
+              <button onClick={e => { e.stopPropagation(); onCtx(e, item.id); }} className="md:hidden p-1 -mt-1 -mr-1 rounded-lg text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800/50 transition-colors flex-shrink-0">
                 <MoreVertical size={16} />
               </button>
             )}
@@ -1841,7 +1841,7 @@ function FileList({ items, selected, section, onSelect, onOpen, onCtx, onStar, o
               }
             }}
             onDoubleClick={(e: any) => { e.stopPropagation(); onOpen(item); }}
-            className={`group grid grid-cols-[minmax(0,1fr)_80px] md:grid-cols-[minmax(0,1fr)_160px_120px_100px] gap-3 px-4 py-2.5 items-center cursor-pointer transition-colors select-none ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:bg-slate-800'} ${i < items.length - 1 ? 'border-b border-gray-50' : ''}`}
+            className={`group grid grid-cols-[minmax(0,1fr)_80px] md:grid-cols-[minmax(0,1fr)_160px_120px_100px] gap-3 px-4 py-2.5 items-center cursor-pointer transition-colors select-none ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-slate-800'} ${i < items.length - 1 ? 'border-b border-gray-50' : ''}`}
           >
             <div className="flex items-center gap-2.5 min-w-0 pr-2">
               <div className="flex-shrink-0">
@@ -1858,13 +1858,13 @@ function FileList({ items, selected, section, onSelect, onOpen, onCtx, onStar, o
               {/* Row actions */}
               {section !== 'trash' && (
                 <div className="flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                  <button onClick={e => { e.stopPropagation(); onStar(item.id) }} className="p-1 rounded hover:bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 hover:text-amber-500 transition-colors">
+                  <button onClick={e => { e.stopPropagation(); onStar(item.id) }} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800/50 text-gray-400 dark:text-slate-500 hover:text-amber-500 transition-colors">
                     <Star size={13} fill={item.starred ? '#F59E0B' : 'none'} color={item.starred ? '#F59E0B' : undefined} />
                   </button>
-                  <button onClick={e => { e.stopPropagation(); onShare(item) }} className="p-1 rounded hover:bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 hover:text-blue-500 dark:text-blue-400 transition-colors">
+                  <button onClick={e => { e.stopPropagation(); onShare(item) }} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800/50 text-gray-400 dark:text-slate-500 hover:text-blue-500 dark:text-blue-400 transition-colors">
                     <Share2 size={13} />
                   </button>
-                  <button onClick={e => { e.stopPropagation(); onTrash(item.id) }} className="p-1 rounded hover:bg-red-50 dark:bg-red-900/20 text-gray-400 dark:text-slate-500 hover:text-red-500 transition-colors">
+                  <button onClick={e => { e.stopPropagation(); onTrash(item.id) }} className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 dark:text-slate-500 hover:text-red-500 transition-colors">
                     <Trash2 size={13} />
                   </button>
                 </div>
@@ -1878,7 +1878,7 @@ function FileList({ items, selected, section, onSelect, onOpen, onCtx, onStar, o
               {selected.size <= 1 && (
                 <button
                   onClick={e => { e.stopPropagation(); onCtx(e, item.id); }}
-                  className="md:hidden p-1 rounded-lg text-gray-400 dark:text-slate-500 hover:bg-gray-200 dark:bg-slate-700 transition-colors"
+                  className="md:hidden p-1 rounded-lg text-gray-400 dark:text-slate-500 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
                 >
                   <MoreVertical size={16} />
                 </button>
@@ -1937,7 +1937,7 @@ function ProfileModal({ user, onClose, onUpdated }: any) {
       <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
         <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Account Settings</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:bg-slate-800/50 rounded-xl transition-colors text-gray-400 dark:text-slate-500">
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800/50 rounded-xl transition-colors text-gray-400 dark:text-slate-500">
             <X size={18} />
           </button>
         </div>
@@ -1995,7 +1995,7 @@ function ProfileModal({ user, onClose, onUpdated }: any) {
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2 text-sm font-medium text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors"
+                className="px-5 py-2 text-sm font-medium text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-xl transition-colors"
               >
                 Cancel
               </button>
@@ -2020,7 +2020,7 @@ function ProfileModal({ user, onClose, onUpdated }: any) {
                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{s.ipAddress} &bull; {s.location}</p>
                    <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">Last active: {new Date(s.lastActive).toLocaleString()}</p>
                  </div>
-                 <button onClick={() => handleRevoke(s.id)} className="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 dark:bg-red-900/20 font-medium rounded-lg transition-colors ml-4 shrink-0">Revoke</button>
+                 <button onClick={() => handleRevoke(s.id)} className="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium rounded-lg transition-colors ml-4 shrink-0">Revoke</button>
                </div>
              ))}
           </div>

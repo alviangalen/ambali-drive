@@ -129,7 +129,7 @@ export default function PublicShare() {
           </div>
         </div>
         {allowDownload && file.type !== 'folder' && (
-          <button onClick={handleDownload} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 text-white rounded-xl transition-colors text-sm font-medium">
+          <button onClick={handleDownload} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:hover:bg-slate-900/20 text-white rounded-xl transition-colors text-sm font-medium">
             <Download size={16} /> Download
           </button>
         )}
