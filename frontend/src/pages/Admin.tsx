@@ -78,10 +78,10 @@ export default function Admin() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  if (loading) return <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-400">Loading admin panel...</div>;
+  if (loading) return <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-[#28292A] text-gray-500 dark:text-gray-300">Loading admin panel...</div>;
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] bg-gray-50 dark:bg-slate-800 font-sans">
+    <div className="flex flex-col md:flex-row h-[100dvh] bg-gray-50 dark:bg-[#28292A] font-sans">
       {/* Sidebar */}
       <div className="w-full md:w-64 flex-shrink-0 bg-[#1054A0] text-white p-4 md:p-6 flex flex-col gap-4 md:gap-8">
         <div className="flex items-center justify-between md:justify-start gap-3">
@@ -94,21 +94,21 @@ export default function Admin() {
         <nav className="flex flex-row md:flex-col gap-2 overflow-x-auto hide-scrollbar pb-2 md:pb-0">
           <button 
             onClick={() => setActiveTab('users')}
-            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'users' ? 'bg-white dark:bg-slate-900/15 font-semibold' : 'hover:bg-white dark:hover:bg-slate-900/5 text-blue-100'}`}
+            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'users' ? 'bg-white dark:bg-[#1E1F20]/15 font-semibold' : 'hover:bg-white dark:hover:bg-[#28292A]/5 text-blue-100'}`}
           >
             <Users size={20} />
             Users
           </button>
           <button 
             onClick={() => setActiveTab('logs')}
-            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'logs' ? 'bg-white dark:bg-slate-900/15 font-semibold' : 'hover:bg-white dark:hover:bg-slate-900/5 text-blue-100'}`}
+            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'logs' ? 'bg-white dark:bg-[#1E1F20]/15 font-semibold' : 'hover:bg-white dark:hover:bg-[#28292A]/5 text-blue-100'}`}
           >
             <Activity size={20} />
             Audit Logs
           </button>
           <button 
             onClick={() => setActiveTab('settings')}
-            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'settings' ? 'bg-white dark:bg-slate-900/15 font-semibold' : 'hover:bg-white dark:hover:bg-slate-900/5 text-blue-100'}`}
+            className={`flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === 'settings' ? 'bg-white dark:bg-[#1E1F20]/15 font-semibold' : 'hover:bg-white dark:hover:bg-[#28292A]/5 text-blue-100'}`}
           >
             <Lock size={20} />
             Security Settings
@@ -143,30 +143,30 @@ export default function Admin() {
         
         {/* Stats Header */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-10">
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-4">
+          <div className="bg-white dark:bg-[#1E1F20] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-[#2B2D31] flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-[#1054A0]">
               <Users size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-slate-400 font-medium">Total Users</p>
+              <p className="text-sm text-gray-500 dark:text-gray-300 font-medium">Total Users</p>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.totalUsers || 0}</h3>
             </div>
           </div>
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-4">
+          <div className="bg-white dark:bg-[#1E1F20] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-[#2B2D31] flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600">
               <Database size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-slate-400 font-medium">Storage Used</p>
+              <p className="text-sm text-gray-500 dark:text-gray-300 font-medium">Storage Used</p>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{formatBytes(stats?.totalStorageUsed || 0)}</h3>
             </div>
           </div>
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-4">
+          <div className="bg-white dark:bg-[#1E1F20] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-[#2B2D31] flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
               <Activity size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-slate-400 font-medium">Total Files</p>
+              <p className="text-sm text-gray-500 dark:text-gray-300 font-medium">Total Files</p>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.totalFiles || 0}</h3>
             </div>
           </div>
@@ -174,41 +174,41 @@ export default function Admin() {
 
         {/* Tabs */}
         {activeTab === 'users' && (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden fade-in">
-            <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
+          <div className="bg-white dark:bg-[#1E1F20] rounded-2xl shadow-sm border border-gray-100 dark:border-[#2B2D31] overflow-hidden fade-in">
+            <div className="p-6 border-b border-gray-100 dark:border-[#2B2D31] flex justify-between items-center bg-gray-50 dark:bg-[#28292A]">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">User Management</h2>
               <div className="relative">
-                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
-                <input type="text" placeholder="Search users..." className="pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0]" />
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-400" />
+                <input type="text" placeholder="Search users..." className="pl-10 pr-4 py-2 bg-white dark:bg-[#1E1F20] border border-gray-200 dark:border-[#333538] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0]" />
               </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
-                <tr className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800">
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Storage</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                <tr className="bg-white dark:bg-[#1E1F20] border-b border-gray-100 dark:border-[#2B2D31]">
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Role</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Storage</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(u => (
-                  <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50 dark:hover:bg-[#333538] transition-colors">
                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{u.name}</td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-slate-400 text-sm">{u.email}</td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-300 text-sm">{u.email}</td>
                     <td className="px-6 py-4 text-sm">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 dark:bg-slate-800/50 text-gray-700 dark:text-slate-200'}`}>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 dark:bg-[#28292A] text-gray-700 dark:text-gray-100'}`}>
                         {u.role.toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-slate-400 text-sm">
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-300 text-sm">
                       {formatBytes(u.storageUsed)} / {formatBytes(u.storageQuota)}
                       <button 
                         onClick={() => handleQuotaUpdate(u.id, u.storageQuota)}
-                        className="ml-2 p-1 text-gray-400 dark:text-slate-500 hover:text-[#1054A0] transition-colors rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        className="ml-2 p-1 text-gray-400 dark:text-gray-400 hover:text-[#1054A0] transition-colors rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
                         title="Edit Quota"
                       >
                         <Pencil size={12} />
@@ -244,31 +244,31 @@ export default function Admin() {
         )}
 
         {activeTab === 'logs' && (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden fade-in">
-             <div className="p-6 border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/50">
+          <div className="bg-white dark:bg-[#1E1F20] rounded-2xl shadow-sm border border-gray-100 dark:border-[#2B2D31] overflow-hidden fade-in">
+             <div className="p-6 border-b border-gray-100 dark:border-[#2B2D31] bg-gray-50 dark:bg-[#28292A]">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">Audit Logs (Last 100 actions)</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
-                  <tr className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800">
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Time</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Admin</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Action</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">IP Address</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Details</th>
+                  <tr className="bg-white dark:bg-[#1E1F20] border-b border-gray-100 dark:border-[#2B2D31]">
+                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Time</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Admin</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Action</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">IP Address</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Details</th>
                   </tr>
                 </thead>
                 <tbody>
                   {logs.map(l => (
-                    <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors text-sm">
-                      <td className="px-6 py-4 text-gray-500 dark:text-slate-400">{new Date(l.createdAt).toLocaleString()}</td>
+                    <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50 dark:hover:bg-[#333538] transition-colors text-sm">
+                      <td className="px-6 py-4 text-gray-500 dark:text-gray-300">{new Date(l.createdAt).toLocaleString()}</td>
                       <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{l.admin.email}</td>
                       <td className="px-6 py-4">
-                        <span className="px-2 py-1 bg-gray-100 dark:bg-slate-800/50 text-gray-700 dark:text-slate-200 rounded text-xs font-mono">{l.action}</span>
+                        <span className="px-2 py-1 bg-gray-100 dark:bg-[#28292A] text-gray-700 dark:text-gray-100 rounded text-xs font-mono">{l.action}</span>
                       </td>
-                      <td className="px-6 py-4 text-gray-500 dark:text-slate-400 font-mono text-xs">{l.ipAddress || 'Unknown'}</td>
-                      <td className="px-6 py-4 text-gray-500 dark:text-slate-400">{l.details}</td>
+                      <td className="px-6 py-4 text-gray-500 dark:text-gray-300 font-mono text-xs">{l.ipAddress || 'Unknown'}</td>
+                      <td className="px-6 py-4 text-gray-500 dark:text-gray-300">{l.details}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -279,14 +279,14 @@ export default function Admin() {
 
         {activeTab === 'settings' && (
           <div className="max-w-xl fade-in">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-8">
+            <div className="bg-white dark:bg-[#1E1F20] rounded-2xl shadow-sm border border-gray-100 dark:border-[#2B2D31] p-8">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-[#1054A0]">
                   <Lock size={24} />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">Change Admin Password</h2>
-                  <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">Ensure your admin account stays secure</p>
+                  <p className="text-gray-500 dark:text-gray-300 text-sm mt-1">Ensure your admin account stays secure</p>
                 </div>
               </div>
               
@@ -304,12 +304,12 @@ export default function Admin() {
                 }
               }} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Current Password</label>
-                  <input name="oldPassword" type="password" required className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0] transition-colors" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-100 mb-1">Current Password</label>
+                  <input name="oldPassword" type="password" required className="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#28292A] border border-gray-200 dark:border-[#333538] rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0] transition-colors" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">New Password</label>
-                  <input name="newPassword" type="password" required minLength={8} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0] transition-colors" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-100 mb-1">New Password</label>
+                  <input name="newPassword" type="password" required minLength={8} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#28292A] border border-gray-200 dark:border-[#333538] rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1054A0]/20 focus:border-[#1054A0] transition-colors" />
                 </div>
                 <button type="submit" className="w-full py-3 px-4 bg-[#1054A0] hover:bg-[#0D4A8A] text-white font-medium rounded-xl transition-colors shadow-sm">
                   Update Password

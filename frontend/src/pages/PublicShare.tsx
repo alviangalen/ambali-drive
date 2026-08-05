@@ -78,25 +78,25 @@ export default function PublicShare() {
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-800"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#28292A]"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
   }
 
   if (needsPassword) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-800 px-4">
-        <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-2xl shadow-sm p-6 text-center border border-gray-100 dark:border-slate-800">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#28292A] px-4">
+        <div className="max-w-md w-full bg-white dark:bg-[#1E1F20] rounded-2xl shadow-sm p-6 text-center border border-gray-100 dark:border-[#2B2D31]">
           <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <Lock size={24} className="text-blue-600 dark:text-blue-400" />
           </div>
           <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Protected File</h2>
-          <p className="text-gray-500 dark:text-slate-400 text-sm mb-6">This file is password protected. Please enter the password to view it.</p>
+          <p className="text-gray-500 dark:text-gray-300 text-sm mb-6">This file is password protected. Please enter the password to view it.</p>
           <form onSubmit={e => { e.preventDefault(); fetchFile(password); }}>
             <input
               type="password"
               placeholder="Enter password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              className="w-full px-4 py-2 border border-gray-200 dark:border-[#333538] rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
             />
             {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
             <button type="submit" className="w-full py-2.5 bg-[#1054A0] text-white rounded-xl font-medium hover:bg-[#0D4A8A] transition-colors">
@@ -110,8 +110,8 @@ export default function PublicShare() {
 
   if (error || !file) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-800">
-        <p className="text-gray-500 dark:text-slate-400 mb-4">{error || 'File not found'}</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-[#28292A]">
+        <p className="text-gray-500 dark:text-gray-300 mb-4">{error || 'File not found'}</p>
       </div>
     )
   }
@@ -120,7 +120,7 @@ export default function PublicShare() {
     <div className="min-h-screen flex flex-col bg-gray-950">
       <header className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-gray-900/50 backdrop-blur-md">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-white dark:bg-slate-900/10 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-white dark:bg-[#1E1F20]/10 rounded-xl flex items-center justify-center">
             {file.type === 'folder' ? <Folder size={20} color={COLORS.folder} /> : <FIcon type={file.type} size={20} />}
           </div>
           <div>
@@ -129,7 +129,7 @@ export default function PublicShare() {
           </div>
         </div>
         {allowDownload && file.type !== 'folder' && (
-          <button onClick={handleDownload} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:hover:bg-slate-900/20 text-white rounded-xl transition-colors text-sm font-medium">
+          <button onClick={handleDownload} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1E1F20]/10 hover:bg-white dark:hover:bg-[#28292A]/20 text-white rounded-xl transition-colors text-sm font-medium">
             <Download size={16} /> Download
           </button>
         )}
@@ -151,7 +151,7 @@ export default function PublicShare() {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4">
-            <div className="w-32 h-32 bg-white dark:bg-slate-900/5 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/10">
+            <div className="w-32 h-32 bg-white dark:bg-[#1E1F20]/5 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/10">
               <FIcon type={file.type} size={48} />
             </div>
             <p className="text-white/60 text-sm">No preview available</p>

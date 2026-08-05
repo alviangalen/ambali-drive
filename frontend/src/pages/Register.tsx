@@ -43,12 +43,12 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden slide-up">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#28292A] flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white dark:bg-[#1E1F20] rounded-2xl shadow-xl border border-gray-100 dark:border-[#2B2D31] overflow-hidden slide-up">
         <div className="px-8 pt-8 pb-6 text-center">
           <img src={ambaliLogo} alt="Ambali Drive" className="h-10 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create an account</h2>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-2">Join Ambali Drive to manage your files</p>
+          <p className="text-sm text-gray-500 dark:text-gray-300 mt-2">Join Ambali Drive to manage your files</p>
         </div>
 
         <div className="px-8 pb-8 space-y-6">
@@ -60,47 +60,47 @@ export default function Register() {
 
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-700 dark:text-slate-200">Full Name</label>
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-100">Full Name</label>
               <div className="relative">
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1054A0]/30 focus:border-[#1054A0] bg-gray-50 dark:bg-slate-800/50 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-[#333538] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1054A0]/30 focus:border-[#1054A0] bg-gray-50 dark:bg-[#28292A] transition-all"
                   placeholder="John Doe"
                   required
                 />
-                <UserIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
+                <UserIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-400" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-700 dark:text-slate-200">Email Address</label>
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-100">Email Address</label>
               <div className="relative">
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1054A0]/30 focus:border-[#1054A0] bg-gray-50 dark:bg-slate-800/50 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-[#333538] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1054A0]/30 focus:border-[#1054A0] bg-gray-50 dark:bg-[#28292A] transition-all"
                   placeholder="name@ambali.io"
                   required
                 />
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-400" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-700 dark:text-slate-200">Password</label>
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-100">Password</label>
               <div className="relative">
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1054A0]/30 focus:border-[#1054A0] bg-gray-50 dark:bg-slate-800/50 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-[#333538] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1054A0]/30 focus:border-[#1054A0] bg-gray-50 dark:bg-[#28292A] transition-all"
                   placeholder="••••••••"
                   required
                 />
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-400" />
               </div>
             </div>
 
@@ -114,7 +114,7 @@ export default function Register() {
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 dark:text-slate-400">
+          <p className="text-center text-sm text-gray-500 dark:text-gray-300">
             Already have an account? <span className="text-[#1054A0] font-medium cursor-pointer hover:underline" onClick={() => navigate('/login')}>Sign in</span>
           </p>
         </div>

@@ -221,7 +221,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, title, onDownload }) 
             <button
               onClick={handlePrevPage}
               disabled={pageNum <= 1}
-              className="p-1 rounded hover:bg-white dark:hover:bg-slate-900/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              className="p-1 rounded hover:bg-white dark:hover:bg-[#28292A]/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
               title="Halaman Sebelumnya"
             >
               <ChevronLeft size={18} />
@@ -232,7 +232,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, title, onDownload }) 
             <button
               onClick={handleNextPage}
               disabled={pageNum >= numPages}
-              className="p-1 rounded hover:bg-white dark:hover:bg-slate-900/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              className="p-1 rounded hover:bg-white dark:hover:bg-[#28292A]/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
               title="Halaman Selanjutnya"
             >
               <ChevronRight size={18} />
@@ -245,7 +245,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, title, onDownload }) 
           <div className="flex items-center gap-1 bg-neutral-950/60 px-2 py-1 rounded-lg border border-white/5">
             <button
               onClick={handleZoomOut}
-              className="p-1 rounded hover:bg-white dark:hover:bg-slate-900/10 transition-colors"
+              className="p-1 rounded hover:bg-white dark:hover:bg-[#28292A]/10 transition-colors"
               title="Perkecil (-)"
             >
               <ZoomOut size={16} />
@@ -255,14 +255,14 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, title, onDownload }) 
             </span>
             <button
               onClick={handleZoomIn}
-              className="p-1 rounded hover:bg-white dark:hover:bg-slate-900/10 transition-colors"
+              className="p-1 rounded hover:bg-white dark:hover:bg-[#28292A]/10 transition-colors"
               title="Perbesar (+)"
             >
               <ZoomIn size={16} />
             </button>
             <button
               onClick={handleResetZoom}
-              className="p-1 rounded hover:bg-white dark:hover:bg-slate-900/10 transition-colors ml-1"
+              className="p-1 rounded hover:bg-white dark:hover:bg-[#28292A]/10 transition-colors ml-1"
               title="Reset Zoom"
             >
               <RotateCcw size={14} />
@@ -311,7 +311,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, title, onDownload }) 
 
         <canvas
           ref={canvasRef}
-          className={`shadow-2xl rounded bg-white dark:bg-slate-900 ${
+          className={`shadow-2xl rounded bg-white dark:bg-[#1E1F20] ${
             isLoading || error ? 'hidden' : 'block'
           }`}
         />
